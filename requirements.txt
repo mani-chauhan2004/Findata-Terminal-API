@@ -1,0 +1,17 @@
+#core 
+fastapi>=0.133.1
+uvicorn>=0.41.0
+
+
+#pydantic setup
+pydantic>=2.12.5
+pydantic-settings>=2.13.1
+
+
+#async and process managers
+aiohttp>=3.13.3
+gunicorn>=25.1.0
+
+
+#dotenv
+python-dotenv>=1.2.1
