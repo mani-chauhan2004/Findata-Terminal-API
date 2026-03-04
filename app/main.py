@@ -7,6 +7,9 @@ from fastapi import FastAPI
 from app.core.config import settings
 from app.core.paths import PROJECT_ROOT
 from contextlib import asynccontextmanager
+from app.api.router import router
+from app.core.redis_client import close_redis
+from app.core.http_client import close_client
 
 if str(PROJECT_ROOT) not in sys.path:
     sys.path.insert(0, str(PROJECT_ROOT))
@@ -31,11 +34,12 @@ def setup_logging():
 
 @asynccontextmanager
 async def lifespan(app: FastAPI):
-    logger.info("Starting the application")
     setup_logging()
-    logging.basicConfig(level="INFO")
+    logger.info("Starting the application")
     yield
     logger.info("Stopping the application")
+    await close_redis()
+    await close_client()
 
 
 app = FastAPI(
@@ -46,6 +50,8 @@ app = FastAPI(
     redoc_url="/redoc" if settings.ENVIRONMENT == "local" else None,
     openapi_url="/openapi.json" if settings.ENVIRONMENT == "local" else None,
 )
+
+app.include_router(router)
 
 if __name__ == "__main__":
     logger.info(f"🚀 Starting server on {settings.HOST}:{settings.PORT}")
