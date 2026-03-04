@@ -15,3 +15,9 @@ gunicorn>=25.1.0
 
 #dotenv
 python-dotenv>=1.2.1
+
+#httpx
+httpx>=0.28.1
+
+#redis
+redis>=7.2.1
