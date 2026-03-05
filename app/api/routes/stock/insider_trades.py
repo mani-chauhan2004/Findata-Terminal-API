@@ -11,13 +11,13 @@ router = APIRouter(
 
 eodhd = EodhdClient()
 
-@router.get("/{symbol}/insider_trades")
+@router.get("/insider_transactions")
 async def get_insider_transactions_data(
-    symbol: str,
-    limit: int = Query(..., description="The number of insider transactions to return"),
+    symbol: str | None = Query(None, description="Symbol of the stock (optional)"),
+    limit: int | None = Query(None, description="The number of insider transactions to return"),
 ):
-    sym = symbol.upper()
-    cache_key = f"insider_trades:{sym}:{limit}"
+    sym = symbol.upper() if symbol else None
+    cache_key = f"insider_trades:{sym or 'all'}:{limit or 'all'}"
     cached_data = await cache.get_cache(cache_key)
     if cached_data is not None:
         return cached_data

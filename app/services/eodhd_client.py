@@ -1,16 +1,29 @@
 import json
 from app.core.http_client import get_client
 
+
+def _parse_response(response, empty_default=None):
+    response.raise_for_status()
+    text = response.text.strip()
+    if not text:
+        return empty_default if empty_default is not None else {}
+    try:
+        return json.loads(text)
+    except json.JSONDecodeError as e:
+        raise ValueError(f"Invalid response from API: {e}") from e
+
+
 class EodhdClient:
-    async def get_fundamentals_data(self, symbol: str, filter: str = "") -> any:
+    async def get_fundamentals_data(self, symbol: str, filter: str | None = None) -> any:
         client = await get_client()
+        params = {}
+        if filter is not None:
+            params["filter"] = filter
         response = await client.get(
             f"/api/fundamentals/{symbol}.US",
-            params={
-                "filter": filter,
-            }
+            params=params,
         )
-        return response.json()
+        return _parse_response(response, empty_default={})
     
     async def get_earnings_calendar_data(self, symbol: str | None = None, from_date: str | None = None, to_date: str | None = None) -> any:
         client = await get_client()
@@ -25,146 +38,171 @@ class EodhdClient:
             f"/api/calendar/earnings",
             params=params,
         )
-        return response.json()
+        return _parse_response(response, empty_default=[])
 
     async def get_dividend_history_data(self, symbol: str) -> any:
         client = await get_client()
-        response =await client.get(
+        response = await client.get(
             f"/api/div/{symbol}.US",
         )
-        return response.json()
+        return _parse_response(response, empty_default=[])
 
-    async def get_hisorical_eod_data(self, symbol: str, from_date: str, to_date: str) -> any:
+    async def get_hisorical_eod_data(self, symbol: str, from_date: str | None = None, to_date: str | None = None) -> any:
         client = await get_client()
+        params = {}
+        if from_date is not None:
+            params["from"] = from_date
+        if to_date is not None:
+            params["to"] = to_date
         response = await client.get(
             f"/api/eod/{symbol}.US",
-            params={
-                "from": from_date,
-                "to": to_date,
-            }
+            params=params,
         )
-        return response.json()
+        return _parse_response(response, empty_default=[])
 
     async def get_real_time_quote_data(self, symbol: str) -> any:
         client = await get_client()
         response = await client.get(
             f"/api/real-time/{symbol}.US",
         )
-        return response.json()
+        return _parse_response(response, empty_default={})
     
-    async def get_us_quote_delayed_data(self, symbol: str) -> any: 
+    async def get_us_quote_delayed_data(self, symbol: str | None = None) -> any:
         client = await get_client()
+        params = {}
+        if symbol is not None:
+            params["s"] = f"{symbol}.US"
         response = await client.get(
             f"/api/us-quote-delayed",
-            params={
-                "s": f"{symbol}.US",
-            }
+            params=params,
         )
-        return response.json()
+        return _parse_response(response, empty_default={})
 
-    async def get_insider_transactions_data(self, symbol: str, limit: int = 100) -> any:
+    async def get_insider_transactions_data(self, symbol: str | None = None, limit: int | None = None) -> any:
         client = await get_client()
+        params = {}
+        if symbol is not None:
+            params["code"] = f"{symbol}.US"
+        if limit is not None:
+            params["limit"] = limit
         response = await client.get(
             f"/api/insider-transactions",
-            params={
-                "code": f"{symbol}.US",
-                "limit": limit,
-            }
+            params=params
         )
-        return response.json()
+        return _parse_response(response, empty_default=[])
 
-    async def get_news_data(self, symbol: str, limit: int = 100) -> any:
+    async def get_news_data(self, symbol: str | None = None, limit: int | None = None) -> any:
         client = await get_client()
-        params = {
-            "limit": limit,
-            "s": f"{symbol}.US",
-        }
+        params = {}
+        if symbol is not None:
+            params["s"] = f"{symbol}.US"
+        if limit is not None:
+            params["limit"] = limit
         response = await client.get(
             f"/api/news",
             params=params
         )
-        return response.json()
+        return _parse_response(response, empty_default=[])
     
     async def get_index_based_real_time_quotes_data(self, index: str) -> any:
         client = await get_client()
         response = await client.get(
             f"/api/real-time/{index}.INDX"
         )
-        return response.json()
+        return _parse_response(response, empty_default={})
     
-    async def get_index_based_historical_eod_data(self, index: str, from_date: str, to_date: str) -> any:
+    async def get_index_based_historical_eod_data(self, index: str, from_date: str | None = None, to_date: str | None = None) -> any:
         client = await get_client()
+        params = {}
+        if from_date is not None:
+            params["from"] = from_date
+        if to_date is not None:
+            params["to"] = to_date
         response = await client.get(
             f"/api/eod/{index}.INDX",
-            params={
-                "from": from_date,
-                "to": to_date,
-            }
+            params=params
         )
-        return response.json()
+        return _parse_response(response, empty_default=[])
 
     async def get_commodity_based_real_time_quotes_data(self, commodity: str) -> any:
         client = await get_client()
         response = await client.get(
             f"/api/real-time/{commodity}.COMM"
         )
-        return response.json()
+        return _parse_response(response, empty_default={})
 
-    async def get_screener_data(self, sort: str, limit: int, filters: list[list[str]]) -> any:
+    async def get_screener_data(self, sort: str | None = None, limit: int | None = None, filters: list[list[str]] | None = None) -> any:
         client = await get_client()
+        params = {}
+        if sort is not None:
+            params["sort"] = sort
+        if limit is not None:
+            params["limit"] = limit
+        if filters is not None:
+            params["filters"] = json.dumps(filters)
         response = await client.get(
             f"/api/screener",
-            params={
-                "sort": sort,
-                "limit": limit,
-                "filters": json.dumps(filters),
-            }
+            params=params,
         )
-        return response.json()
+        return _parse_response(response, empty_default=[])
 
-    async def get_ipo_calendar_data(self, from_date: str, to_date: str) -> any:
+    async def get_ipo_calendar_data(self, from_date: str | None = None, to_date: str | None = None) -> any:
         client = await get_client()
+        params = {}
+        if from_date is not None:
+            params["from"] = from_date
+        if to_date is not None:
+            params["to"] = to_date
         response = await client.get(
             f"/api/calendar/ipos",
-            params={
-                "from": from_date,
-                "to": to_date,
-            }
+            params=params,
         )
-        return response.json()
+        return _parse_response(response, empty_default=[])
 
-    async def get_split_calendar_data(self, from_date: str, to_date: str) -> any:
+    async def get_split_calendar_data(self, from_date: str | None = None, to_date: str | None = None) -> any:
         client = await get_client()
+        params = {}
+        if from_date is not None:
+            params["from"] = from_date
+        if to_date is not None:
+            params["to"] = to_date
         response = await client.get(
             f"/api/calendar/splits",
-            params={
-                "from": from_date,
-                "to": to_date,
-            }
+            params=params,
         )
-        return response.json()
+        return _parse_response(response, empty_default=[])
     
-    async def get_dividend_calendar_data(self, from_date: str, to_date: str) -> any:
+    async def get_dividend_calendar_data(self, symbol: str | None = None, from_date: str | None = None, to_date: str | None = None, date_eq: str | None = None) -> any:
         client = await get_client()
+        params = {}
+        if from_date is not None:
+            params["filter[date_from]"] = from_date
+        if to_date is not None:
+            params["filter[date_to]"] = to_date
+        if symbol is None and date_eq is None:
+            raise ValueError("Either symbol or date_eq must be provided")
+        if symbol is not None:
+            params["filter[symbol]"] = f"{symbol}.US"
+        elif date_eq is not None:
+            params["filter[date_eq]"] = date_eq
         response = await client.get(
             f"/api/calendar/dividends",
-            params={
-                "filter[date_from]": from_date,
-                "filter[date_to]": to_date,
-            }
+            params=params,
         )
-        return response.json()
+        return _parse_response(response, empty_default=[])
 
-    async def get_economic_events_data(self, from_date: str, to_date: str) -> any:
+    async def get_economic_events_data(self, from_date: str | None = None, to_date: str | None = None) -> any:
         client = await get_client()
+        params = {}
+        if from_date is not None:
+            params["from"] = from_date
+        if to_date is not None:
+            params["to"] = to_date
         response = await client.get(
             f"/api/economic-events",
-            params={
-                "from": from_date,
-                "to": to_date,
-            }
+            params=params,
         )
-        return response.json()
+        return _parse_response(response, empty_default=[])
 
     
 

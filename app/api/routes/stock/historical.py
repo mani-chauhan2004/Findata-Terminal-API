@@ -14,8 +14,8 @@ eodhd = EodhdClient()
 @router.get("/{symbol}/historical")
 async def get_historical_eod_data(
     symbol: str, 
-    from_date: str = Query(..., alias="from", description="Start date in YYYY-MM-DD format"),
-    to_date: str = Query(..., alias="to", description="End date in YYYY-MM-DD format"),
+    from_date: str | None = Query(None, alias="from", description="Start date in YYYY-MM-DD format"),
+    to_date: str | None = Query(None, alias="to", description="End date in YYYY-MM-DD format"),
 ):
     sym = symbol.upper()
     cache_key = f"historical:{sym}:{from_date}:{to_date}"

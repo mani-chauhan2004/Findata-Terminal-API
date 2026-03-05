@@ -19,7 +19,7 @@ async def get_earnings_calendar(
         return cached_data
 
     try:
-        earnings_calendar_data = await eodhd.get_earnings_calendar_data(from_date, to_date)
+        earnings_calendar_data = await eodhd.get_earnings_calendar_data(from_date=from_date, to_date=to_date)
     except Exception as e:
         raise HTTPException(status_code=502, detail=str(e))
 

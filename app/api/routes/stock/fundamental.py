@@ -48,10 +48,10 @@ FILTER_TTL_MAP = {
 @router.get("/{symbol}/fundamental")
 async def get_fundamental_data(
     symbol: str, 
-    filter: str = Query(..., description="The filter to apply to the fundamental data")
+    filter: str | None = Query(None, description="The filter to apply to the fundamental data")
 ):
-    if filter not in VALID_FILTERS:
-        raise HTTPException(status_code=400, detail="Invalid filter, available filters are: " + ", ".join(VALID_FILTERS.keys()))
+    if filter is not None and filter not in VALID_FILTERS:
+        raise HTTPException(status_code=400, detail="Invalid filter, available filters are: " + ", ".join(VALID_FILTERS))
     
     sym = symbol.upper()
     cache_key = f"fundamental:{sym}:{filter}"

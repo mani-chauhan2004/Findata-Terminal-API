@@ -14,10 +14,10 @@ eodhd = EodhdClient()
 @router.get("/{symbol}/news")
 async def get_news_data(
     symbol: str,
-    limit: int = Query(..., description="The number of news items to return"),
+    limit: int | None = Query(None, ge=1, le=1000, description="The number of news items to return"),
 ):
     sym = symbol.upper()
-    cache_key = f"news:{sym}:{limit}"
+    cache_key = f"news:{sym}:{limit or 'all'}"
     cached_data = await cache.get_cache(cache_key)
     if cached_data is not None:
         return cached_data
