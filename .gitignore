@@ -2,7 +2,7 @@
 logs
 test.json
 test.py
-
+dump.rdb
 files/
 __pycache__/
 *.pyc

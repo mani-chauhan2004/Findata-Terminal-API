@@ -9,17 +9,17 @@ eodhd = EodhdClient()
 
 @router.get("/")
 async def get_dividend_calendar(
-    from_date: str = Query(..., alias="from", description="Start date YYYY-MM-DD"),
-    to_date: str = Query(..., alias="to", description="End date YYYY-MM-DD"),
+    date: str = Query(..., description="Ex-dividend date YYYY-MM-DD"),
 ):
-    cache_key = f"calendar:dividends:{from_date}:{to_date}"
+    """Get all stocks going ex-dividend on a specific date."""
+    cache_key = f"calendar:dividends:{date}"
 
     cached_data = await cache.get_cache(cache_key)
     if cached_data is not None:
         return cached_data
 
     try:
-        dividend_calendar_data = await eodhd.get_dividend_calendar_data(from_date, to_date)
+        dividend_calendar_data = await eodhd.get_dividend_calendar_data(date_eq=date)
     except Exception as e:
         raise HTTPException(status_code=502, detail=str(e))
 
