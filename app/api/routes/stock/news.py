@@ -16,6 +16,15 @@ async def get_news_data(
     symbol: str,
     limit: int | None = Query(None, ge=1, le=1000, description="The number of news items to return"),
 ):
+    """
+    Get recent news articles for a stock.
+
+    Returns a list of news articles mentioning the given ticker symbol, ordered
+    by date descending. Cached for 5 minutes.
+
+    - **symbol**: Stock ticker (e.g. `AAPL`)
+    - **limit**: Number of articles to return (1–1000, optional)
+    """
     sym = symbol.upper()
     cache_key = f"news:{sym}:{limit or 'all'}"
     cached_data = await cache.get_cache(cache_key)

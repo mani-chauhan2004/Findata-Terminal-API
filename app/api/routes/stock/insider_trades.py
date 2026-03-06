@@ -16,6 +16,16 @@ async def get_insider_transactions_data(
     symbol: str | None = Query(None, description="Symbol of the stock (optional)"),
     limit: int | None = Query(None, description="The number of insider transactions to return"),
 ):
+    """
+    Get insider trading transactions.
+
+    Returns a list of buy/sell transactions filed by company insiders (executives,
+    directors, and large shareholders). Optionally filter by ticker symbol.
+    Omitting `symbol` returns recent transactions across all securities. Cached for 1 hour.
+
+    - **symbol**: Stock ticker to filter by (e.g. `TSLA`) — optional
+    - **limit**: Maximum number of transactions to return — optional
+    """
     sym = symbol.upper() if symbol else None
     cache_key = f"insider_trades:{sym or 'all'}:{limit or 'all'}"
     cached_data = await cache.get_cache(cache_key)

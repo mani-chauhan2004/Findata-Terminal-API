@@ -30,6 +30,26 @@ async def get_screener(
         description='JSON array of filter arrays e.g. [["exchange","=","US"],["market_capitalization",">","1000000000"]]'
     ),
 ):
+    """
+    Screen and sort stocks using custom filters.
+
+    Returns a list of stocks matching the given filter criteria, sorted by the
+    specified field. Filters are passed as a URL-encoded JSON array of condition
+    tuples. Cached for 5 minutes.
+
+    **Valid `sort` values:** `refund_1d_p`, `refund_1d_p.desc`, `refund_1d_p.asc`,
+    `avgvol_1d`, `avgvol_200d`, `market_capitalization`, `market_capitalization.desc`,
+    `market_capitalization.asc`, `adjusted_close`, `dividend_yield`
+
+    **Filter format:** JSON array of `[field, operator, value]` tuples.
+    Supported operators: `=`, `>`, `<`, `>=`, `<=`, `!=`
+
+    Example: `[["exchange","=","US"],["market_capitalization",">","1000000000"]]`
+
+    - **sort**: Sort field (required)
+    - **limit**: Number of results to return, max 100 (default: 20)
+    - **filters**: URL-encoded JSON filter array (default: no filters)
+    """
     if sort not in VALID_SORT_FIELDS:
         raise HTTPException(
             status_code=400,
@@ -67,7 +87,15 @@ async def get_screener(
 async def get_top_gainers(
     limit: int = Query(20, ge=1, le=100)
 ):
-    """Shortcut — top gainers by 1-day return."""
+    """
+    Get the top gaining US stocks by 1-day return.
+
+    Returns US-listed stocks sorted by 1-day return percentage in descending
+    order. Equivalent to calling the screener with `sort=refund_1d_p.desc`
+    and `filters=[["exchange","=","US"]]`. Cached for 5 minutes.
+
+    - **limit**: Number of results to return, max 100 (default: 20)
+    """
     cache_key = f"screener:gainers:{limit}"
 
     cached_data = await cache.get_cache(cache_key)
@@ -91,7 +119,15 @@ async def get_top_gainers(
 async def get_top_losers(
     limit: int = Query(20, ge=1, le=100)
 ):
-    """Shortcut — top losers by 1-day return."""
+    """
+    Get the top losing US stocks by 1-day return.
+
+    Returns US-listed stocks sorted by 1-day return percentage in ascending
+    order. Equivalent to calling the screener with `sort=refund_1d_p.asc`
+    and `filters=[["exchange","=","US"]]`. Cached for 5 minutes.
+
+    - **limit**: Number of results to return, max 100 (default: 20)
+    """
     cache_key = f"screener:losers:{limit}"
 
     cached_data = await cache.get_cache(cache_key)
@@ -115,7 +151,15 @@ async def get_top_losers(
 async def get_most_active(
     limit: int = Query(20, ge=1, le=100)
 ):
-    """Shortcut — most active by 1-day average volume."""
+    """
+    Get the most actively traded US stocks by 1-day volume.
+
+    Returns US-listed stocks sorted by average 1-day trading volume in
+    descending order. Equivalent to calling the screener with `sort=avgvol_1d.desc`
+    and `filters=[["exchange","=","US"]]`. Cached for 5 minutes.
+
+    - **limit**: Number of results to return, max 100 (default: 20)
+    """
     cache_key = f"screener:most-active:{limit}"
 
     cached_data = await cache.get_cache(cache_key)

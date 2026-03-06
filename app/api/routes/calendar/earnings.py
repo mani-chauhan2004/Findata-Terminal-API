@@ -12,6 +12,15 @@ async def get_earnings_calendar(
     from_date: str = Query(..., alias="from", description="Start date YYYY-MM-DD"),
     to_date: str = Query(..., alias="to", description="End date YYYY-MM-DD"),
 ):
+    """
+    Get the earnings release calendar for a date range.
+
+    Returns a list of companies scheduled to report earnings within the given
+    date range, including estimated and actual EPS where available. Cached for 1 hour.
+
+    - **from**: Start date in `YYYY-MM-DD` format (required)
+    - **to**: End date in `YYYY-MM-DD` format (required)
+    """
     cache_key = f"calendar:earnings:{from_date}:{to_date}"
 
     cached_data = await cache.get_cache(cache_key)
@@ -29,7 +38,14 @@ async def get_earnings_calendar(
 
 @router.get("/symbol/{symbol}")
 async def get_earnings_calendar_by_symbol(symbol: str):
-    """Get earnings calendar for a specific symbol."""
+    """
+    Get earnings dates for a specific company.
+
+    Returns historical and upcoming earnings report dates along with EPS
+    estimates and actuals for the given ticker symbol. Cached for 1 hour.
+
+    - **symbol**: Stock ticker (e.g. `AAPL`, `MSFT`)
+    """
     sym = symbol.upper()
     cache_key = f"calendar:earnings:symbol:{sym}"
 
