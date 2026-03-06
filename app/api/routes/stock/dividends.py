@@ -18,6 +18,22 @@ async def get_dividend_calendar_data(
     from_date: str | None = Query(None, alias="from", description="Start date in YYYY-MM-DD format"),
     to_date: str | None = Query(None, alias="to", description="End date in YYYY-MM-DD format"),
 ):
+    """
+    Get dividend data for a stock or by ex-dividend date.
+
+    Either `symbol` or `date_eq` must be provided:
+
+    - Use `symbol` (optionally with `from`/`to`) to retrieve the dividend history
+      for a specific stock over a date range.
+    - Use `date_eq` to retrieve all stocks whose ex-dividend date falls on that day.
+
+    Cached for 1 hour.
+
+    - **symbol**: Stock ticker (e.g. `AAPL`) — required if `date_eq` is omitted
+    - **date_eq**: Exact ex-dividend date in `YYYY-MM-DD` — required if `symbol` is omitted
+    - **from**: Start of date range in `YYYY-MM-DD` (optional, used with `symbol`)
+    - **to**: End of date range in `YYYY-MM-DD` (optional, used with `symbol`)
+    """
     if symbol is None and date_eq is None:
         raise HTTPException(status_code=400, detail="Either symbol or date_eq must be provided")
     sym = symbol.upper() if symbol else None

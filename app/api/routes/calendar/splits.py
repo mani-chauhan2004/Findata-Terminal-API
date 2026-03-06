@@ -12,6 +12,15 @@ async def get_split_calendar(
     from_date: str = Query(..., alias="from", description="Start date YYYY-MM-DD"),
     to_date: str = Query(..., alias="to", description="End date YYYY-MM-DD"),
 ):
+    """
+    Get the stock split calendar for a date range.
+
+    Returns scheduled and historical stock splits within the given date range,
+    including the split ratio (e.g. 4:1). Cached for 1 hour.
+
+    - **from**: Start date in `YYYY-MM-DD` format (required)
+    - **to**: End date in `YYYY-MM-DD` format (required)
+    """
     cache_key = f"calendar:splits:{from_date}:{to_date}"
 
     cached_data = await cache.get_cache(cache_key)

@@ -13,6 +13,14 @@ eodhd = EodhdClient()
 
 @router.get("/{symbol}/quote")
 async def get_realtime_quote(symbol: str):
+    """
+    Get a real-time quote for a stock.
+
+    Returns the latest price, open, high, low, volume, and percentage change
+    for the given ticker symbol. Cached for 15 seconds.
+
+    - **symbol**: Stock ticker (e.g. `AAPL`, `TSLA`, `MSFT`)
+    """
     sym = symbol.upper()
     cache_key = f"quote:realtime:{sym}"
     cached_data = await cache.get_cache(cache_key)
@@ -29,6 +37,14 @@ async def get_realtime_quote(symbol: str):
 
 @router.get("/{symbol}/quote/delayed")
 async def get_us_quote_delayed(symbol: str):
+    """
+    Get a delayed (15-minute) quote for a US-listed stock.
+
+    Returns the same fields as the real-time quote endpoint but with a
+    15-minute delay. Available for US exchange securities only. Cached for 60 seconds.
+
+    - **symbol**: US stock ticker (e.g. `AAPL`, `TSLA`)
+    """
     sym = symbol.upper()
     cache_key = f"quote:delayed:{sym}"
     cached_data = await cache.get_cache(cache_key)

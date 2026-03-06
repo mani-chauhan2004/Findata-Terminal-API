@@ -11,7 +11,15 @@ eodhd = EodhdClient()
 async def get_dividend_calendar(
     date: str = Query(..., description="Ex-dividend date YYYY-MM-DD"),
 ):
-    """Get all stocks going ex-dividend on a specific date."""
+    """
+    Get all stocks going ex-dividend on a specific date.
+
+    Returns a list of securities whose ex-dividend date matches the given date.
+    Investors must hold shares before this date to be entitled to the dividend.
+    Cached for 1 hour.
+
+    - **date**: Ex-dividend date in `YYYY-MM-DD` format (required)
+    """
     cache_key = f"calendar:dividends:{date}"
 
     cached_data = await cache.get_cache(cache_key)

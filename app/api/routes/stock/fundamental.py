@@ -47,9 +47,39 @@ FILTER_TTL_MAP = {
 
 @router.get("/{symbol}/fundamental")
 async def get_fundamental_data(
-    symbol: str, 
+    symbol: str,
     filter: str | None = Query(None, description="The filter to apply to the fundamental data")
 ):
+    """
+    Get fundamental company data for a stock.
+
+    Returns detailed financial and company data sourced from EODHD. Use the
+    optional `filter` parameter to request a specific section of the data.
+    Omitting `filter` returns the full fundamental payload. Cache TTL varies
+    by filter (1 hour for fast-changing data, 24 hours for slow-changing data).
+
+    **Valid `filter` values:**
+
+    | Filter | Description |
+    |---|---|
+    | `General` | Company profile, sector, industry, description |
+    | `Highlights` | Key metrics: EPS, P/E, market cap |
+    | `SharesStats` | Share structure, float, short interest |
+    | `Valuation` | Enterprise value, EV/EBITDA, P/S ratios |
+    | `Technicals` | 52-week range, moving averages, beta |
+    | `AnalystRatings` | Consensus ratings and price targets |
+    | `Earnings::History` | Historical EPS actuals vs. estimates |
+    | `Earnings::Trend` | Forward EPS and revenue estimates |
+    | `Financials::Income_Statement::yearly` | Annual income statement |
+    | `Financials::Income_Statement::quarterly` | Quarterly income statement |
+    | `Financials::Balance_Sheet::yearly` | Annual balance sheet |
+    | `Financials::Balance_Sheet::quarterly` | Quarterly balance sheet |
+    | `Financials::Cash_Flow::yearly` | Annual cash flow statement |
+    | `Financials::Cash_Flow::quarterly` | Quarterly cash flow statement |
+
+    - **symbol**: Stock ticker (e.g. `AAPL`)
+    - **filter**: Data section to return (optional — returns full payload if omitted)
+    """
     if filter is not None and filter not in VALID_FILTERS:
         raise HTTPException(status_code=400, detail="Invalid filter, available filters are: " + ", ".join(VALID_FILTERS))
     

@@ -11,7 +11,15 @@ eodhd = EodhdClient()
 async def get_market_news(
     limit: int = Query(50, ge=1, le=100, description="Number of news items to return")
 ):
-    """General market news — no symbol filter."""
+    """
+    Get general market news.
+
+    Returns broad financial and market news articles not tied to any specific
+    stock symbol. Useful for building a general market headlines feed. Cached
+    for 5 minutes.
+
+    - **limit**: Number of articles to return (1–100, default: 50)
+    """
     cache_key = f"market:news:{limit}"
 
     cached_data = await cache.get_cache(cache_key)

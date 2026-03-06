@@ -33,6 +33,15 @@ VALID_COMMODITIES = {
 async def get_commodity_based_real_time_quotes_data(
     commodity: str,
 ):
+    """
+    Get a real-time quote for a commodity.
+
+    Returns the latest price, change, and volume data for the specified
+    commodity. Use `GET /market/commodities` to retrieve the list of valid
+    commodity symbols. Cached for 30 seconds.
+
+    - **commodity**: Commodity symbol (e.g. `GC` for Gold, `CL` for WTI Crude Oil)
+    """
     commodity = commodity.upper()
     cache_key = f"commodity_based_real_time_quotes:{commodity}"
     cached_data = await cache.get_cache(cache_key)
@@ -49,7 +58,13 @@ async def get_commodity_based_real_time_quotes_data(
 
 @router.get("/")
 async def list_commodities():
-    """Returns all supported commodities with their display names."""
+    """
+    List all supported commodities.
+
+    Returns the full catalogue of commodities available in this API, covering
+    metals, energy, and agricultural products. Use the `symbol` field from
+    this response as the `commodity` path parameter in other commodity endpoints.
+    """
     return [
         {"symbol": symbol, "name": name}
         for symbol, name in VALID_COMMODITIES.items()

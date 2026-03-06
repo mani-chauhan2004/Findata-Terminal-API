@@ -19,6 +19,19 @@ async def get_economic_calendar(
     to_date: str = Query(..., alias="to", description="End date YYYY-MM-DD"),
     country: str | None = Query(None, description="ISO 3166 2-letter country code e.g. US, GB, DE"),
 ):
+    """
+    Get scheduled macroeconomic events for a date range.
+
+    Returns economic calendar events such as CPI releases, interest rate decisions,
+    GDP announcements, and employment reports. Optionally filter by country.
+    Country filtering is applied client-side. Cached for 30 minutes.
+
+    **Supported country codes:** `US` `GB` `DE` `FR` `JP` `CN` `AU` `CA` `CH` `EU` `IN` `BR` `KR` `MX`
+
+    - **from**: Start date in `YYYY-MM-DD` format (required)
+    - **to**: End date in `YYYY-MM-DD` format (required)
+    - **country**: ISO 3166 2-letter country code to filter results (optional)
+    """
     if country and country.upper() not in VALID_COUNTRIES:
         raise HTTPException(
             status_code=400,

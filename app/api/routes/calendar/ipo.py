@@ -12,6 +12,16 @@ async def get_ipo_calendar(
     from_date: str = Query(..., alias="from", description="Start date YYYY-MM-DD"),
     to_date: str = Query(..., alias="to", description="End date YYYY-MM-DD"),
 ):
+    """
+    Get the IPO calendar for a date range.
+
+    Returns upcoming and recent initial public offerings within the given date
+    range, including company name, exchange, and expected offer price where
+    available. Cached for 1 hour.
+
+    - **from**: Start date in `YYYY-MM-DD` format (required)
+    - **to**: End date in `YYYY-MM-DD` format (required)
+    """
     cache_key = f"calendar:ipo:{from_date}:{to_date}"
 
     cached_data = await cache.get_cache(cache_key)
