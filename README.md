@@ -91,11 +91,8 @@ pip install -r requirements.txt
 
 ### 4. Configure environment variables
 
-Copy the `.env` file and fill in the required values:
-
-```bash
-cp .env .env.local   # optional — edit .env directly if preferred
-```
+The app loads configuration exclusively from `.env` (hardcoded in `app/core/config.py`).
+Edit it directly and replace the placeholder values:
 
 **Required variables:**
 
