@@ -10,7 +10,6 @@ async def get_redis() -> redis.Redis:
             settings.REDIS_URL,
             encoding="utf-8",
             decode_responses=True,
-            ssl=settings.REDIS_URL.startswith("rediss://")
         )
     return _redis
 
