@@ -10,6 +10,7 @@ from contextlib import asynccontextmanager
 from app.api.router import router
 from app.core.redis_client import close_redis
 from app.core.http_client import close_client
+from fastapi.middleware.cors import CORSMiddleware
 
 if str(PROJECT_ROOT) not in sys.path:
     sys.path.insert(0, str(PROJECT_ROOT))
@@ -52,6 +53,18 @@ app = FastAPI(
 )
 
 app.include_router(router)
+
+app.add_middleware(
+    CORSMiddleware,
+    allow_origins=settings.BACKEND_CORS_ORIGINS,
+    allow_credentials=True,
+    allow_methods=["*"],
+    allow_headers=["*"],
+)
+
+@app.get("/health")
+async def health():
+    return {"status": "ok"}
 
 if __name__ == "__main__":
     logger.info(f"🚀 Starting server on {settings.HOST}:{settings.PORT}")
