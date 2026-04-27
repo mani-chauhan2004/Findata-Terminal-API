@@ -60,12 +60,43 @@ class EodhdClient:
         )
         return _parse_response(response, empty_default=[])
 
-    async def get_real_time_quote_data(self, symbol: str) -> any:
+    async def get_intraday_data(self, symbol: str, interval: str | None = None, from_timestamp: int | None = None, to_timestamp: int | None = None) -> any:
         client = await get_client()
-        response = await client.get(
-            f"/api/real-time/{symbol}.US",
-        )
-        return _parse_response(response, empty_default={})
+        params = {}
+        if interval is not None:
+            params["interval"] = interval
+        if from_timestamp is not None:
+            params["from"] = from_timestamp
+        if to_timestamp is not None:
+            params["to"] = to_timestamp
+        response = await client.get(f"/api/intraday/{symbol}", params=params)
+        return _parse_response(response, empty_default=[])
+
+    async def get_generic_eod_data(self, symbol: str, from_date: str | None = None, to_date: str | None = None, period: str | None = None) -> any:
+        client = await get_client()
+        params = {}
+        if from_date is not None:
+            params["from"] = from_date
+        if to_date is not None:
+            params["to"] = to_date
+        if period is not None:
+            params["period"] = period
+        response = await client.get(f"/api/eod/{symbol}", params=params)
+        return _parse_response(response, empty_default=[])
+
+    async def get_mixed_real_time_quotes_data(self, symbols: list[str]) -> any:
+        client = await get_client()
+        primary, *extra = symbols
+        params = {"s": ",".join(extra)} if extra else {}
+        response = await client.get(f"/api/real-time/{primary}", params=params)
+        return _parse_response(response, empty_default=[] if extra else {})
+
+    async def get_real_time_quote_data(self, symbols: list[str]) -> any:
+        client = await get_client()
+        primary, *extra = symbols
+        params = {"s": ",".join(f"{s}.US" for s in extra)} if extra else {}
+        response = await client.get(f"/api/real-time/{primary}.US", params=params)
+        return _parse_response(response, empty_default=[] if extra else {})
     
     async def get_us_quote_delayed_data(self, symbol: str | None = None) -> any:
         client = await get_client()
@@ -104,12 +135,12 @@ class EodhdClient:
         )
         return _parse_response(response, empty_default=[])
     
-    async def get_index_based_real_time_quotes_data(self, index: str) -> any:
+    async def get_index_based_real_time_quotes_data(self, symbols: list[str]) -> any:
         client = await get_client()
-        response = await client.get(
-            f"/api/real-time/{index}.INDX"
-        )
-        return _parse_response(response, empty_default={})
+        primary, *extra = symbols
+        params = {"s": ",".join(f"{s}.INDX" for s in extra)} if extra else {}
+        response = await client.get(f"/api/real-time/{primary}.INDX", params=params)
+        return _parse_response(response, empty_default=[] if extra else {})
     
     async def get_index_based_historical_eod_data(self, index: str, from_date: str | None = None, to_date: str | None = None) -> any:
         client = await get_client()
@@ -124,12 +155,32 @@ class EodhdClient:
         )
         return _parse_response(response, empty_default=[])
 
-    async def get_commodity_based_real_time_quotes_data(self, commodity: str) -> any:
+    async def get_bond_historical_eod_data(self, bond: str, from_date: str | None = None, to_date: str | None = None) -> any:
         client = await get_client()
+        params = {}
+        if from_date is not None:
+            params["from"] = from_date
+        if to_date is not None:
+            params["to"] = to_date
         response = await client.get(
-            f"/api/real-time/{commodity}.COMM"
+            f"/api/eod/{bond}.GBOND",
+            params=params
         )
-        return _parse_response(response, empty_default={})
+        return _parse_response(response, empty_default=[])
+
+    async def get_commodity_based_real_time_quotes_data(self, symbols: list[str]) -> any:
+        client = await get_client()
+        primary, *extra = symbols
+        params = {"s": ",".join(f"{s}.COMM" for s in extra)} if extra else {}
+        response = await client.get(f"/api/real-time/{primary}.COMM", params=params)
+        return _parse_response(response, empty_default=[] if extra else {})
+
+    async def get_crypto_real_time_quotes_data(self, symbols: list[str]) -> any:
+        client = await get_client()
+        primary, *extra = symbols
+        params = {"s": ",".join(f"{s}.CC" for s in extra)} if extra else {}
+        response = await client.get(f"/api/real-time/{primary}.CC", params=params)
+        return _parse_response(response, empty_default=[] if extra else {})
 
     async def get_screener_data(self, sort: str | None = None, limit: int | None = None, filters: list[list[str]] | None = None) -> any:
         client = await get_client()
