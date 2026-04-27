@@ -28,27 +28,28 @@ VALID_INDICES = {
     "000001": "Shanghai Composite",
 }
 
-@router.get("/{index}/real-time-quotes")
+@router.get("/real-time-quotes")
 async def get_index_based_real_time_quotes_data(
-    index: str,
+    symbols: str = Query(..., description="Comma-separated index symbols (e.g. `GSPC` or `GSPC,DJI,IXIC`)"),
 ):
     """
-    Get a real-time quote for a market index.
+    Get real-time quotes for one or more market indices.
 
-    Returns the latest price, change, and volume data for the specified index.
+    Pass a single symbol to get a JSON object, or multiple comma-separated
+    symbols to get a JSON array.
     Use `GET /market/indices` to retrieve the list of valid index symbols.
     Cached for 30 seconds.
 
-    - **index**: Index symbol (e.g. `GSPC` for S&P 500, `DJI` for Dow Jones)
+    - **symbols**: One or more index symbols (e.g. `GSPC` or `GSPC,DJI,IXIC`)
     """
-    index = index.upper()
-    cache_key = f"index_based_real_time_quotes:{index}"
+    syms = [s.strip().upper() for s in symbols.split(",")]
+    cache_key = f"index_based_real_time_quotes:{','.join(sorted(syms))}"
     cached_data = await cache.get_cache(cache_key)
     if cached_data is not None:
         return cached_data
-    
+
     try:
-        index_based_real_time_quotes_data = await eodhd.get_index_based_real_time_quotes_data(index=index)
+        index_based_real_time_quotes_data = await eodhd.get_index_based_real_time_quotes_data(symbols=syms)
         await cache.set_cache(cache_key, index_based_real_time_quotes_data, settings.INDEX_BASED_REAL_TIME_QUOTES_CACHE_TTL)
         return index_based_real_time_quotes_data
     except Exception as e:

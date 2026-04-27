@@ -29,27 +29,28 @@ VALID_COMMODITIES = {
     "CT":  "Cotton",
 }
 
-@router.get("/{commodity}/real-time-quotes")
+@router.get("/real-time-quotes")
 async def get_commodity_based_real_time_quotes_data(
-    commodity: str,
+    symbols: str = Query(..., description="Comma-separated commodity symbols (e.g. `GC` or `GC,SI,CL`)"),
 ):
     """
-    Get a real-time quote for a commodity.
+    Get real-time quotes for one or more commodities.
 
-    Returns the latest price, change, and volume data for the specified
-    commodity. Use `GET /market/commodities` to retrieve the list of valid
-    commodity symbols. Cached for 30 seconds.
+    Pass a single symbol to get a JSON object, or multiple comma-separated
+    symbols to get a JSON array.
+    Use `GET /market/commodities` to retrieve the list of valid commodity symbols.
+    Cached for 30 seconds.
 
-    - **commodity**: Commodity symbol (e.g. `GC` for Gold, `CL` for WTI Crude Oil)
+    - **symbols**: One or more commodity symbols (e.g. `GC` or `GC,SI,CL`)
     """
-    commodity = commodity.upper()
-    cache_key = f"commodity_based_real_time_quotes:{commodity}"
+    syms = [s.strip().upper() for s in symbols.split(",")]
+    cache_key = f"commodity_based_real_time_quotes:{','.join(sorted(syms))}"
     cached_data = await cache.get_cache(cache_key)
     if cached_data is not None:
         return cached_data
-    
+
     try:
-        commodity_based_real_time_quotes_data = await eodhd.get_commodity_based_real_time_quotes_data(commodity=commodity)
+        commodity_based_real_time_quotes_data = await eodhd.get_commodity_based_real_time_quotes_data(symbols=syms)
         await cache.set_cache(cache_key, commodity_based_real_time_quotes_data, settings.COMMODITY_BASED_REAL_TIME_QUOTES_CACHE_TTL)
         return commodity_based_real_time_quotes_data
     except Exception as e:
