@@ -2,7 +2,7 @@
 
 > **Version**: v1
 > **Base URL**: `http://localhost:8000/api/v1`
-> **Last Updated**: 2026-03-06
+> **Last Updated**: 2026-05-08
 
 ---
 
@@ -19,14 +19,15 @@
 9. [Stock Endpoints](#stock-endpoints)
 10. [Calendar Endpoints](#calendar-endpoints)
 11. [Market Endpoints](#market-endpoints)
-12. [Workflows & Common Use Cases](#workflows--common-use-cases)
-13. [Reference: Parameters & Types](#reference-parameters--types)
+12. [Health](#health)
+13. [Workflows & Common Use Cases](#workflows--common-use-cases)
+14. [Reference: Parameters & Types](#reference-parameters--types)
 
 ---
 
 ## Overview
 
-The ASXN Terminal API is a financial data proxy service that provides real-time and historical market data for stocks, indices, commodities, and financial calendars. It is built on top of the [EODHD](https://eodhd.com) data provider and adds Redis-backed caching to reduce latency and upstream load.
+The ASXN Terminal API is a financial data proxy service that provides real-time and historical market data for stocks, indices, commodities, crypto, and financial calendars. It is built on top of the [EODHD](https://eodhd.com) data provider and adds Redis-backed caching to reduce latency and upstream load.
 
 **Who is this for?**
 - **Developers** integrating financial data into front-end dashboards or trading tools
@@ -34,14 +35,19 @@ The ASXN Terminal API is a financial data proxy service that provides real-time 
 - **Product teams** building screens, alerts, or portfolio analytics
 
 **Key capabilities:**
-- Real-time and delayed stock quotes
+- Real-time and delayed stock quotes (single or batch)
 - End-of-day (EOD) historical price data
+- Intraday OHLCV bars (1m, 5m, 1h)
+- Generic EOD data across any exchange type (stocks, crypto, indices, commodities)
+- Mixed real-time quotes across multiple asset classes in a single call
 - Fundamental company data (income statements, balance sheets, cash flows, valuations)
 - Insider transaction data
 - Stock, market, and financial news
 - Economic, earnings, dividend, split, and IPO calendars
 - Market screener with gainers, losers, and most-active filters
 - Global index and commodity quotes
+- Cryptocurrency quotes
+- Government bond historical data
 
 ---
 
@@ -157,7 +163,7 @@ gunicorn app.main:app \
 ### 7. Verify the server is running
 
 ```bash
-curl http://localhost:8000/api/v1/stock/AAPL/quote
+curl http://localhost:8000/api/v1/stock/quote?symbols=AAPL
 ```
 
 You should receive a JSON quote response. The interactive Swagger UI is available at `http://localhost:8000/docs` when `TERMINAL_ENVIRONMENT=local`.
@@ -185,7 +191,7 @@ Your first call should return a real-time quote in under 5 minutes.
 ### Step 1 — Verify the API is running
 
 ```bash
-curl http://localhost:8000/api/v1/stock/AAPL/quote
+curl http://localhost:8000/api/v1/stock/quote?symbols=AAPL
 ```
 
 ### Step 2 — Explore the auto-generated docs
@@ -227,14 +233,16 @@ All endpoints are prefixed with `/api/v1`. Breaking changes will be introduced u
 ### Request
 
 - All requests use **HTTP GET**
-- Parameters are passed as **path parameters** (`/stock/{symbol}/quote`) or **query parameters** (`?from=2025-01-01`)
+- Parameters are passed as **path parameters** (`/stock/{symbol}/historical`) or **query parameters** (`?symbols=AAPL,TSLA`)
 - Date values must follow **ISO 8601 format**: `YYYY-MM-DD`
+- Unix timestamps (used in intraday) must be in **UTC**
 - The `filters` parameter on the screener endpoint accepts a **JSON-encoded array** (URL-encoded when sent via query string)
+- Multiple symbols are passed as a **comma-separated string** in a single `symbols` query parameter
 
 ### Response
 
 - All responses return **JSON**
-- Response shape varies by endpoint and is sourced directly from EODHD — see endpoint sections for field descriptions
+- Endpoints that accept multiple symbols return a **JSON array**; single-symbol calls return a **JSON object**
 - Successful responses use HTTP `200`
 
 ---
@@ -299,22 +307,27 @@ All endpoints use **Redis** for response caching. Cached responses are served in
 |---|---|
 | Real-time stock quote | 15 seconds |
 | Delayed US stock quote | 60 seconds |
-| Historical EOD | 1 hour |
+| Mixed real-time quotes (multi-asset) | 15 seconds |
+| Crypto real-time quotes | 15 seconds |
+| Index real-time quotes | 30 seconds |
+| Commodity real-time quotes | 30 seconds |
+| Intraday OHLCV | 60 seconds |
+| Historical EOD (stock) | 1 hour |
+| Generic EOD (any exchange) | 1 hour |
+| Bond historical EOD | 1 hour |
+| Index historical EOD | 1 hour |
 | Dividend (stock) | 1 hour |
 | Insider transactions | 1 hour |
-| Fundamental data (slow-changing filters) | 24 hours |
-| Fundamental data (fast-changing filters) | 1 hour |
-| Stock news | 5 minutes |
-| Economic calendar | 30 minutes |
 | Earnings calendar | 1 hour |
 | Dividend calendar | 1 hour |
 | Split calendar | 1 hour |
 | IPO calendar | 1 hour |
-| Market screener | 5 minutes |
+| Fundamental data (fast-changing filters) | 1 hour |
+| Stock news | 5 minutes |
 | Market news | 5 minutes |
-| Index real-time quotes | 30 seconds |
-| Index historical EOD | 1 hour |
-| Commodity real-time quotes | 30 seconds |
+| Market screener | 5 minutes |
+| Economic calendar | 30 minutes |
+| Fundamental data (slow-changing filters) | 24 hours |
 
 > Cache TTLs are configurable via environment variables. Stale data is never returned on cache miss — a fresh upstream request is always made.
 
@@ -322,20 +335,26 @@ All endpoints use **Redis** for response caching. Cached responses are served in
 
 ## Stock Endpoints
 
-### GET `/stock/{symbol}/quote`
+### GET `/stock/quote`
 
-Returns a real-time quote for the given stock symbol.
+Returns real-time quotes for one or more US stocks. Pass a single ticker to get a JSON object, or multiple comma-separated tickers to get a JSON array.
 
-**Path Parameters**
+**Query Parameters**
 
 | Parameter | Type | Required | Description |
 |---|---|---|---|
-| `symbol` | string | Yes | Stock ticker symbol (e.g., `AAPL`, `TSLA`, `MSFT`) |
+| `symbols` | string | Yes | Comma-separated US ticker symbols (e.g. `AAPL` or `AAPL,TSLA,MSFT`) |
 
-**Example Request**
+**Example Request — single symbol**
 
 ```bash
-curl http://localhost:8000/api/v1/stock/AAPL/quote
+curl "http://localhost:8000/api/v1/stock/quote?symbols=AAPL"
+```
+
+**Example Request — multiple symbols**
+
+```bash
+curl "http://localhost:8000/api/v1/stock/quote?symbols=AAPL,TSLA,MSFT"
 ```
 
 **Example Response**
@@ -382,7 +401,7 @@ curl http://localhost:8000/api/v1/stock/AAPL/quote/delayed
 
 ### GET `/stock/{symbol}/historical`
 
-Returns end-of-day (EOD) historical price data for a stock.
+Returns end-of-day (EOD) historical price data for a stock. Omit `from` and `to` to retrieve the full available history.
 
 **Path Parameters**
 
@@ -510,19 +529,19 @@ Returns fundamental company data. Use the `filter` parameter to narrow the respo
 | Filter | Description | Cache TTL |
 |---|---|---|
 | `General` | Company profile, sector, industry, description | 24 hours |
-| `Highlights` | Key financial highlights (EPS, P/E, market cap) | 24 hours |
+| `Highlights` | Key financial highlights (EPS, P/E, market cap) | 1 hour |
 | `SharesStats` | Share structure, float, short interest | 24 hours |
-| `Valuation` | Enterprise value, EV/EBITDA, P/S ratios | 24 hours |
+| `Valuation` | Enterprise value, EV/EBITDA, P/S ratios | 1 hour |
 | `Technicals` | 52-week range, 50/200-day moving averages, beta | 1 hour |
-| `AnalystRatings` | Consensus ratings, price targets | 1 hour |
+| `AnalystRatings` | Consensus ratings, price targets | 24 hours |
 | `Earnings::History` | Historical EPS actuals vs. estimates | 24 hours |
-| `Earnings::Trend` | Forward EPS estimates and revenue trends | 1 hour |
+| `Earnings::Trend` | Forward EPS estimates and revenue trends | 24 hours |
 | `Financials::Income_Statement::yearly` | Annual income statement | 24 hours |
-| `Financials::Income_Statement::quarterly` | Quarterly income statement | 1 hour |
+| `Financials::Income_Statement::quarterly` | Quarterly income statement | 24 hours |
 | `Financials::Balance_Sheet::yearly` | Annual balance sheet | 24 hours |
-| `Financials::Balance_Sheet::quarterly` | Quarterly balance sheet | 1 hour |
+| `Financials::Balance_Sheet::quarterly` | Quarterly balance sheet | 24 hours |
 | `Financials::Cash_Flow::yearly` | Annual cash flow statement | 24 hours |
-| `Financials::Cash_Flow::quarterly` | Quarterly cash flow statement | 1 hour |
+| `Financials::Cash_Flow::quarterly` | Quarterly cash flow statement | 24 hours |
 
 **Example Request — highlights only**
 
@@ -714,6 +733,118 @@ curl "http://localhost:8000/api/v1/calendar/ipo?from=2025-03-01&to=2025-03-31"
 
 ## Market Endpoints
 
+### GET `/market/real-time-quotes`
+
+Returns real-time quotes for a mixed list of symbols across any exchange type in a single call. Accepts symbols with explicit exchange suffixes.
+
+**Query Parameters**
+
+| Parameter | Type | Required | Description |
+|---|---|---|---|
+| `symbols` | string | Yes | Comma-separated symbols with exchange suffix (e.g. `TSLA.US,ETH-USD.CC,GC.COMM,GSPC.INDX`) |
+
+**Supported Exchange Suffixes**
+
+| Suffix | Asset Type |
+|---|---|
+| `.US` | US stocks |
+| `.INDX` | Market indices |
+| `.COMM` | Commodities |
+| `.CC` | Cryptocurrencies |
+| `.GBOND` | Government bonds |
+| `.FOREX` | Forex pairs |
+
+**Example Request**
+
+```bash
+curl "http://localhost:8000/api/v1/market/real-time-quotes?symbols=TSLA.US,ETH-USD.CC,GC.COMM,GSPC.INDX"
+```
+
+**Cache TTL**: 15 seconds
+
+---
+
+### GET `/market/intraday`
+
+Returns intraday OHLCV bars for any symbol across any exchange type.
+
+**Query Parameters**
+
+| Parameter | Type | Required | Description |
+|---|---|---|---|
+| `symbol` | string | Yes | Symbol with exchange suffix (e.g. `AAPL.US`, `ETH-USD.CC`) |
+| `interval` | string | No | Bar interval: `1m`, `5m`, or `1h` (default: `1h`) |
+| `from` | integer | No | Start time as Unix timestamp (UTC) |
+| `to` | integer | No | End time as Unix timestamp (UTC) |
+
+**Example Request**
+
+```bash
+curl "http://localhost:8000/api/v1/market/intraday?symbol=AAPL.US&interval=5m"
+```
+
+**Example Response**
+
+```json
+[
+  {
+    "datetime": "2025-03-05 14:30:00",
+    "open": 227.20,
+    "high": 228.10,
+    "low": 226.90,
+    "close": 227.85,
+    "volume": 312400
+  }
+]
+```
+
+> Omitting `from`/`to` returns the last 120 days of bars.
+
+**Cache TTL**: 60 seconds
+
+---
+
+### GET `/market/eod`
+
+Returns end-of-day OHLCV bars for any symbol across any exchange type. More flexible than the stock-specific historical endpoint — works for stocks, crypto, indices, commodities, and bonds.
+
+**Query Parameters**
+
+| Parameter | Type | Required | Description |
+|---|---|---|---|
+| `symbol` | string | Yes | Symbol with exchange suffix (e.g. `AAPL.US`, `ETH-USD.CC`, `GC.COMM`, `GSPC.INDX`) |
+| `from` | string | No | Start date in `YYYY-MM-DD` format |
+| `to` | string | No | End date in `YYYY-MM-DD` format |
+| `period` | string | No | Bar period: `d` daily, `w` weekly, `m` monthly (default: `d`) |
+
+**Example Request**
+
+```bash
+curl "http://localhost:8000/api/v1/market/eod?symbol=ETH-USD.CC&from=2025-01-01&to=2025-03-01&period=w"
+```
+
+**Example Response**
+
+```json
+[
+  {
+    "date": "2025-03-01",
+    "open": 2200.00,
+    "high": 2350.00,
+    "low": 2180.00,
+    "close": 2310.50,
+    "adjusted_close": 2310.50,
+    "volume": 18200000
+  }
+]
+```
+
+> Omitting `from`/`to` returns the full available history.
+
+**Cache TTL**: 1 hour
+
+---
+
 ### GET `/market/screener`
 
 Returns a filtered and sorted list of stocks matching the given criteria. Useful for building watchlists, screeners, or dashboard widgets.
@@ -872,20 +1003,26 @@ curl http://localhost:8000/api/v1/market/indices
 
 ---
 
-### GET `/market/indices/{index}/real-time-quotes`
+### GET `/market/indices/real-time-quotes`
 
-Returns real-time quote data for a specific market index.
+Returns real-time quote data for one or more market indices. Pass a single symbol to get a JSON object, or multiple comma-separated symbols to get a JSON array.
 
-**Path Parameters**
+**Query Parameters**
 
 | Parameter | Type | Required | Description |
 |---|---|---|---|
-| `index` | string | Yes | Index symbol (e.g., `GSPC`, `DJI`, `N225`) |
+| `symbols` | string | Yes | Comma-separated index symbols (e.g. `GSPC` or `GSPC,DJI,IXIC`) |
 
-**Example Request**
+**Example Request — single index**
 
 ```bash
-curl http://localhost:8000/api/v1/market/indices/GSPC/real-time-quotes
+curl "http://localhost:8000/api/v1/market/indices/real-time-quotes?symbols=GSPC"
+```
+
+**Example Request — multiple indices**
+
+```bash
+curl "http://localhost:8000/api/v1/market/indices/real-time-quotes?symbols=GSPC,DJI,IXIC"
 ```
 
 **Cache TTL**: 30 seconds
@@ -935,8 +1072,8 @@ curl http://localhost:8000/api/v1/market/commodities
 [
   { "symbol": "GC", "name": "Gold" },
   { "symbol": "SI", "name": "Silver" },
-  { "symbol": "CL", "name": "Crude Oil WTI" },
-  { "symbol": "BZ", "name": "Crude Oil Brent" },
+  { "symbol": "CL", "name": "Crude Oil (WTI)" },
+  { "symbol": "BZ", "name": "Crude Oil (Brent)" },
   { "symbol": "NG", "name": "Natural Gas" },
   { "symbol": "ZW", "name": "Wheat" },
   { "symbol": "ZC", "name": "Corn" }
@@ -953,23 +1090,157 @@ curl http://localhost:8000/api/v1/market/commodities
 
 ---
 
-### GET `/market/commodities/{commodity}/real-time-quotes`
+### GET `/market/commodities/real-time-quotes`
 
-Returns real-time quote data for a specific commodity.
+Returns real-time quote data for one or more commodities. Pass a single symbol to get a JSON object, or multiple comma-separated symbols to get a JSON array.
+
+**Query Parameters**
+
+| Parameter | Type | Required | Description |
+|---|---|---|---|
+| `symbols` | string | Yes | Comma-separated commodity symbols (e.g. `GC` or `GC,SI,CL`) |
+
+**Example Request — single commodity**
+
+```bash
+curl "http://localhost:8000/api/v1/market/commodities/real-time-quotes?symbols=GC"
+```
+
+**Example Request — multiple commodities**
+
+```bash
+curl "http://localhost:8000/api/v1/market/commodities/real-time-quotes?symbols=GC,SI,CL"
+```
+
+**Cache TTL**: 30 seconds
+
+---
+
+### GET `/market/crypto`
+
+Returns the full list of supported cryptocurrencies with their symbols and display names.
+
+**Example Request**
+
+```bash
+curl http://localhost:8000/api/v1/market/crypto
+```
+
+**Example Response**
+
+```json
+[
+  { "symbol": "BTC-USD", "name": "Bitcoin" },
+  { "symbol": "ETH-USD", "name": "Ethereum" },
+  { "symbol": "SOL-USD", "name": "Solana" },
+  { "symbol": "BNB-USD", "name": "BNB" },
+  { "symbol": "XRP-USD", "name": "XRP" },
+  { "symbol": "USDC-USD", "name": "USD Coin" },
+  { "symbol": "ADA-USD", "name": "Cardano" },
+  { "symbol": "AVAX-USD", "name": "Avalanche" },
+  { "symbol": "DOGE-USD", "name": "Dogecoin" },
+  { "symbol": "TRX-USD", "name": "TRON" }
+]
+```
+
+---
+
+### GET `/market/crypto/real-time-quotes`
+
+Returns real-time quote data for one or more cryptocurrencies. Pass a single symbol to get a JSON object, or multiple comma-separated symbols to get a JSON array.
+
+**Query Parameters**
+
+| Parameter | Type | Required | Description |
+|---|---|---|---|
+| `symbols` | string | Yes | Comma-separated crypto symbols (e.g. `BTC-USD` or `BTC-USD,ETH-USD,SOL-USD`) |
+
+**Example Request — single crypto**
+
+```bash
+curl "http://localhost:8000/api/v1/market/crypto/real-time-quotes?symbols=BTC-USD"
+```
+
+**Example Request — multiple cryptos**
+
+```bash
+curl "http://localhost:8000/api/v1/market/crypto/real-time-quotes?symbols=BTC-USD,ETH-USD,SOL-USD"
+```
+
+**Cache TTL**: 15 seconds
+
+---
+
+### GET `/market/bonds`
+
+Returns the full list of supported government bonds with their symbols and display names.
+
+**Example Request**
+
+```bash
+curl http://localhost:8000/api/v1/market/bonds
+```
+
+**Example Response**
+
+```json
+[
+  { "symbol": "US1Y", "name": "US 1-Year Treasury" },
+  { "symbol": "US2Y", "name": "US 2-Year Treasury" },
+  { "symbol": "US5Y", "name": "US 5-Year Treasury" },
+  { "symbol": "US10Y", "name": "US 10-Year Treasury" },
+  { "symbol": "US30Y", "name": "US 30-Year Treasury" }
+]
+```
+
+---
+
+### GET `/market/bonds/{bond}/historical-eod`
+
+Returns end-of-day historical data for a government bond.
 
 **Path Parameters**
 
 | Parameter | Type | Required | Description |
 |---|---|---|---|
-| `commodity` | string | Yes | Commodity symbol (e.g., `GC` for Gold, `CL` for WTI Crude Oil) |
+| `bond` | string | Yes | Bond symbol (e.g. `US10Y`, `US2Y`) |
+
+**Query Parameters**
+
+| Parameter | Type | Required | Description |
+|---|---|---|---|
+| `from` | string | No | Start date in `YYYY-MM-DD` format |
+| `to` | string | No | End date in `YYYY-MM-DD` format |
 
 **Example Request**
 
 ```bash
-curl http://localhost:8000/api/v1/market/commodities/GC/real-time-quotes
+curl "http://localhost:8000/api/v1/market/bonds/US10Y/historical-eod?from=2025-01-01&to=2025-03-01"
 ```
 
-**Cache TTL**: 30 seconds
+> Omitting `from`/`to` returns the full available history (5+ years).
+
+**Cache TTL**: 1 hour
+
+---
+
+## Health
+
+### GET `/health`
+
+Returns the current health status of the API server. Does not require authentication and is not versioned (available at the root, not under `/api/v1`).
+
+**Example Request**
+
+```bash
+curl http://localhost:8000/health
+```
+
+**Example Response**
+
+```json
+{ "status": "ok" }
+```
 
 ---
 
@@ -981,7 +1252,7 @@ Fetch all relevant data for a stock detail page in parallel:
 
 ```bash
 # Real-time price
-curl http://localhost:8000/api/v1/stock/AAPL/quote
+curl "http://localhost:8000/api/v1/stock/quote?symbols=AAPL"
 
 # Key highlights (market cap, EPS, P/E)
 curl "http://localhost:8000/api/v1/stock/AAPL/fundamental?filter=Highlights"
@@ -998,10 +1269,8 @@ curl "http://localhost:8000/api/v1/stock/AAPL/news?limit=10"
 ### Workflow 2 — Build a market dashboard
 
 ```bash
-# Major index quotes
-curl http://localhost:8000/api/v1/market/indices/GSPC/real-time-quotes
-curl http://localhost:8000/api/v1/market/indices/DJI/real-time-quotes
-curl http://localhost:8000/api/v1/market/indices/IXIC/real-time-quotes
+# Major index quotes in one call
+curl "http://localhost:8000/api/v1/market/indices/real-time-quotes?symbols=GSPC,DJI,IXIC"
 
 # Top 5 gainers and losers
 curl "http://localhost:8000/api/v1/market/screener/gainers?limit=5"
@@ -1055,6 +1324,44 @@ curl "http://localhost:8000/api/v1/stock/insider_transactions?symbol=NVDA&limit=
 
 ---
 
+### Workflow 6 — Multi-asset real-time dashboard
+
+Fetch quotes for stocks, crypto, indices, and commodities in a single call:
+
+```bash
+curl "http://localhost:8000/api/v1/market/real-time-quotes?symbols=TSLA.US,BTC-USD.CC,GC.COMM,GSPC.INDX"
+```
+
+---
+
+### Workflow 7 — Crypto portfolio tracker
+
+```bash
+# List available cryptos
+curl http://localhost:8000/api/v1/market/crypto
+
+# Real-time prices for a portfolio
+curl "http://localhost:8000/api/v1/market/crypto/real-time-quotes?symbols=BTC-USD,ETH-USD,SOL-USD"
+
+# Historical EOD for charting
+curl "http://localhost:8000/api/v1/market/eod?symbol=BTC-USD.CC&from=2025-01-01&to=2025-03-01"
+```
+
+---
+
+### Workflow 8 — Bond yield monitoring
+
+```bash
+# List supported bonds
+curl http://localhost:8000/api/v1/market/bonds
+
+# Historical yield curve data
+curl "http://localhost:8000/api/v1/market/bonds/US2Y/historical-eod?from=2024-01-01&to=2025-01-01"
+curl "http://localhost:8000/api/v1/market/bonds/US10Y/historical-eod?from=2024-01-01&to=2025-01-01"
+```
+
+---
+
 ## Reference: Parameters & Types
 
 ### Data Types
@@ -1064,17 +1371,21 @@ curl "http://localhost:8000/api/v1/stock/insider_transactions?symbol=NVDA&limit=
 | `string` | UTF-8 text | `"AAPL"` |
 | `integer` | Whole number | `50` |
 | `date` | ISO 8601 | `"2025-03-01"` |
+| `timestamp` | Unix UTC integer | `1741200000` |
 | `json_array` | URL-encoded JSON | `%5B%5B%22exchange%22%2C%22%3D%22%2C%22US%22%5D%5D` |
 
 ### Common Parameters
 
 | Parameter | Type | Description |
 |---|---|---|
-| `symbol` | string | Stock ticker symbol. US stocks use bare tickers (`AAPL`). Some endpoints append exchange suffix automatically (e.g., `AAPL.US`) |
-| `from` | date | Inclusive start date for range queries |
-| `to` | date | Inclusive end date for range queries |
+| `symbols` | string | Comma-separated tickers. US stocks use bare tickers (`AAPL`); cross-asset endpoints require exchange suffixes (`AAPL.US`) |
+| `symbol` | string | Single ticker, used on path-parameter endpoints |
+| `from` | date or timestamp | Inclusive start of range. Date string for EOD endpoints; Unix timestamp for intraday |
+| `to` | date or timestamp | Inclusive end of range. Date string for EOD endpoints; Unix timestamp for intraday |
 | `limit` | integer | Caps the number of results returned |
-| `filter` | string | Selects a sub-section of a larger response object |
+| `filter` | string | Selects a sub-section of a larger response object (fundamentals) |
+| `period` | string | Bar aggregation period — `d` daily, `w` weekly, `m` monthly |
+| `interval` | string | Intraday bar size — `1m`, `5m`, `1h` |
 
 ### Supported Index Symbols
 
@@ -1113,6 +1424,31 @@ curl "http://localhost:8000/api/v1/stock/insider_transactions?symbol=NVDA&limit=
 | `SB` | Sugar | Agriculture |
 | `CC` | Cocoa | Agriculture |
 | `CT` | Cotton | Agriculture |
+
+### Supported Crypto Symbols
+
+| Symbol | Name |
+|---|---|
+| `BTC-USD` | Bitcoin |
+| `ETH-USD` | Ethereum |
+| `SOL-USD` | Solana |
+| `BNB-USD` | BNB |
+| `XRP-USD` | XRP |
+| `USDC-USD` | USD Coin |
+| `ADA-USD` | Cardano |
+| `AVAX-USD` | Avalanche |
+| `DOGE-USD` | Dogecoin |
+| `TRX-USD` | TRON |
+
+### Supported Bond Symbols
+
+| Symbol | Name |
+|---|---|
+| `US1Y` | US 1-Year Treasury |
+| `US2Y` | US 2-Year Treasury |
+| `US5Y` | US 5-Year Treasury |
+| `US10Y` | US 10-Year Treasury |
+| `US30Y` | US 30-Year Treasury |
 
 ### Supported Economic Calendar Country Codes
 
