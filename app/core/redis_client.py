@@ -11,6 +11,8 @@ async def get_redis() -> redis.Redis:
             encoding="utf-8",
             decode_responses=True,
         )
+        await _redis.config_set("maxmemory", "100mb")
+        await _redis.config_set("maxmemory-policy", "allkeys-lru")
     return _redis
 
 
