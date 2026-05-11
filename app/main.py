@@ -8,8 +8,10 @@ from app.core.config import settings
 from app.core.paths import PROJECT_ROOT
 from contextlib import asynccontextmanager
 from app.api.router import router
+from app.api.routes.admin import keys as admin_keys
 from app.core.redis_client import close_redis
 from app.core.http_client import close_client
+from app.core.database import init_db
 from fastapi.middleware.cors import CORSMiddleware
 
 if str(PROJECT_ROOT) not in sys.path:
@@ -36,6 +38,7 @@ def setup_logging():
 @asynccontextmanager
 async def lifespan(app: FastAPI):
     setup_logging()
+    await init_db()
     logger.info("Starting the application")
     yield
     logger.info("Stopping the application")
@@ -53,6 +56,7 @@ app = FastAPI(
 )
 
 app.include_router(router)
+app.include_router(admin_keys.router)
 
 app.add_middleware(
     CORSMiddleware,

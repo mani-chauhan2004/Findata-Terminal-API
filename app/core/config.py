@@ -40,6 +40,8 @@ class settings(BaseSettings):
 
     PROJECT_NAME: str
 
+    ADMIN_KEY: str
+
     EODHD_API_KEY: str
     EODHD_API_BASE_URL: str
 
