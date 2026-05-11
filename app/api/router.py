@@ -17,9 +17,10 @@ from app.api.routes.calendar import ipo
 from app.api.routes.calendar import splits as split
 from app.api.routes.calendar import dividends as dividend
 from app.api.routes.calendar import economic
-from fastapi import APIRouter
+from fastapi import APIRouter, Depends
+from app.core.dependencies import verify_api_key
 
-router = APIRouter()
+router = APIRouter(dependencies=[Depends(verify_api_key)])
 
 router.include_router(quote.router)
 router.include_router(historical.router)
