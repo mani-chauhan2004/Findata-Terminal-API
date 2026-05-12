@@ -22,7 +22,16 @@ VALID_CRYPTO = {
     "AVAX-USD": "Avalanche",
     "DOGE-USD": "Dogecoin",
     "TRX-USD": "TRON",
+    "LINK-USD": "Chainlink",
+    "AAVE-USD": "Aave",
 }
+
+
+def normalize_symbol(symbol: str) -> str:
+    """Normalize USDC-quoted pairs to USD (e.g. BTC-USDC → BTC-USD)."""
+    if symbol.endswith("-USDC"):
+        return symbol[:-5] + "-USD"
+    return symbol
 
 
 @router.get("/real-time-quotes")
@@ -39,7 +48,7 @@ async def get_crypto_real_time_quotes_data(
 
     - **symbols**: One or more crypto symbols (e.g. `BTC-USD` or `BTC-USD,ETH-USD,SOL-USD`)
     """
-    syms = [s.strip().upper() for s in symbols.split(",")]
+    syms = [normalize_symbol(s.strip().upper()) for s in symbols.split(",")]
     cache_key = f"crypto_real_time_quotes:{','.join(sorted(syms))}"
     cached_data = await cache.get_cache(cache_key)
     if cached_data is not None:
@@ -65,7 +74,7 @@ async def get_crypto_fundamentals(symbol: str):
 
     - **symbol**: Crypto symbol (e.g. `BTC-USD`)
     """
-    sym = symbol.upper()
+    sym = normalize_symbol(symbol.upper())
     if sym not in VALID_CRYPTO:
         raise HTTPException(status_code=400, detail=f"Unsupported symbol '{sym}'. Use GET /market/crypto for the full list.")
 
