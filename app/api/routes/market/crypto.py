@@ -53,6 +53,36 @@ async def get_crypto_real_time_quotes_data(
         raise HTTPException(status_code=502, detail=str(e))
 
 
+@router.get("/{symbol}/fundamentals")
+async def get_crypto_fundamentals(symbol: str):
+    """
+    Get fundamental statistics for a cryptocurrency.
+
+    Returns market cap, diluted market cap, circulating supply, max supply,
+    market dominance, and all-time high/low from EODHD.
+    Use `GET /market/crypto` to retrieve the list of valid symbols.
+    Cached for 5 minutes.
+
+    - **symbol**: Crypto symbol (e.g. `BTC-USD`)
+    """
+    sym = symbol.upper()
+    if sym not in VALID_CRYPTO:
+        raise HTTPException(status_code=400, detail=f"Unsupported symbol '{sym}'. Use GET /market/crypto for the full list.")
+
+    cache_key = f"crypto_fundamentals:{sym}"
+    cached_data = await cache.get_cache(cache_key)
+    if cached_data is not None:
+        return cached_data
+
+    try:
+        data = await eodhd.get_crypto_fundamentals_data(symbol=sym)
+        result = data.get("Statistics", {})
+        await cache.set_cache(cache_key, result, settings.CRYPTO_FUNDAMENTALS_CACHE_TTL)
+        return result
+    except Exception as e:
+        raise HTTPException(status_code=502, detail=str(e))
+
+
 @router.get("/")
 async def list_crypto():
     """
