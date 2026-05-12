@@ -182,6 +182,11 @@ class EodhdClient:
         response = await client.get(f"/api/real-time/{primary}.CC", params=params)
         return _parse_response(response, empty_default=[] if extra else {})
 
+    async def get_crypto_fundamentals_data(self, symbol: str) -> any:
+        client = await get_client()
+        response = await client.get(f"/api/fundamentals/{symbol}.CC")
+        return _parse_response(response, empty_default={})
+
     async def get_screener_data(self, sort: str | None = None, limit: int | None = None, filters: list[list[str]] | None = None) -> any:
         client = await get_client()
         params = {}
