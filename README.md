@@ -2,7 +2,7 @@
 
 > **Version**: v1
 > **Base URL**: `http://localhost:8000/api/v1`
-> **Last Updated**: 2026-05-08
+> **Last Updated**: 2026-05-12
 
 ---
 
@@ -309,6 +309,7 @@ All endpoints use **Redis** for response caching. Cached responses are served in
 | Delayed US stock quote | 60 seconds |
 | Mixed real-time quotes (multi-asset) | 15 seconds |
 | Crypto real-time quotes | 15 seconds |
+| Crypto fundamentals (market cap, supply) | 5 minutes |
 | Index real-time quotes | 30 seconds |
 | Commodity real-time quotes | 30 seconds |
 | Intraday OHLCV | 60 seconds |
@@ -1171,6 +1172,44 @@ curl "http://localhost:8000/api/v1/market/crypto/real-time-quotes?symbols=BTC-US
 
 ---
 
+### GET `/market/crypto/{symbol}/fundamentals`
+
+Returns fundamental statistics for a single cryptocurrency, including market cap, supply metrics, market dominance, and all-time high/low. Use `GET /market/crypto` to retrieve the list of valid symbols.
+
+**Path Parameters**
+
+| Parameter | Type | Required | Description |
+|---|---|---|---|
+| `symbol` | string | Yes | Crypto symbol (e.g. `BTC-USD`) |
+
+**Example Request**
+
+```bash
+curl http://localhost:8000/api/v1/market/crypto/BTC-USD/fundamentals
+```
+
+**Example Response**
+
+```json
+{
+  "MarketCapitalization": 1626727053449.70,
+  "MarketCapitalizationDiluted": 1705657405785.60,
+  "CirculatingSupply": 20028212,
+  "TotalSupply": 20028212,
+  "MaxSupply": 21000000,
+  "MarketCapDominance": 60.13,
+  "TechnicalDoc": "https://bitcoin.org/bitcoin.pdf",
+  "Explorer": "https://blockchain.info/",
+  "SourceCode": "https://github.com/bitcoin/bitcoin",
+  "LowAllTime": 0.04864654,
+  "HighAllTime": 126198.07
+}
+```
+
+**Cache TTL**: 5 minutes
+
+---
+
 ### GET `/market/bonds`
 
 Returns the full list of supported government bonds with their symbols and display names.
@@ -1342,6 +1381,9 @@ curl http://localhost:8000/api/v1/market/crypto
 
 # Real-time prices for a portfolio
 curl "http://localhost:8000/api/v1/market/crypto/real-time-quotes?symbols=BTC-USD,ETH-USD,SOL-USD"
+
+# Market cap, supply, and dominance
+curl http://localhost:8000/api/v1/market/crypto/BTC-USD/fundamentals
 
 # Historical EOD for charting
 curl "http://localhost:8000/api/v1/market/eod?symbol=BTC-USD.CC&from=2025-01-01&to=2025-03-01"
