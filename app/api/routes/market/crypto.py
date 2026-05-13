@@ -11,22 +11,6 @@ router = APIRouter(
 
 eodhd = EodhdClient()
 
-VALID_CRYPTO = {
-    "BTC-USD": "Bitcoin",
-    "ETH-USD": "Ethereum",
-    "SOL-USD": "Solana",
-    "BNB-USD": "BNB",
-    "XRP-USD": "XRP",
-    "USDC-USD": "USD Coin",
-    "ADA-USD": "Cardano",
-    "AVAX-USD": "Avalanche",
-    "DOGE-USD": "Dogecoin",
-    "TRX-USD": "TRON",
-    "LINK-USD": "Chainlink",
-    "AAVE-USD": "Aave",
-}
-
-
 def normalize_symbol(symbol: str) -> str:
     """Normalize USDC-quoted pairs to USD (e.g. BTC-USDC → BTC-USD)."""
     if symbol.endswith("-USDC"):
@@ -75,9 +59,6 @@ async def get_crypto_fundamentals(symbol: str):
     - **symbol**: Crypto symbol (e.g. `BTC-USD`)
     """
     sym = normalize_symbol(symbol.upper())
-    if sym not in VALID_CRYPTO:
-        raise HTTPException(status_code=400, detail=f"Unsupported symbol '{sym}'. Use GET /market/crypto for the full list.")
-
     cache_key = f"crypto_fundamentals:{sym}"
     cached_data = await cache.get_cache(cache_key)
     if cached_data is not None:
@@ -92,16 +73,3 @@ async def get_crypto_fundamentals(symbol: str):
         raise HTTPException(status_code=502, detail=str(e))
 
 
-@router.get("/")
-async def list_crypto():
-    """
-    List all supported cryptocurrencies.
-
-    Returns the full catalogue of crypto assets available in this API.
-    Use the `symbol` field from this response as the `symbol` path parameter
-    in other crypto endpoints.
-    """
-    return [
-        {"symbol": symbol, "name": name}
-        for symbol, name in VALID_CRYPTO.items()
-    ]

@@ -1,4 +1,5 @@
 import json
+from urllib.parse import quote
 from app.core.http_client import get_client
 
 
@@ -81,7 +82,7 @@ class EodhdClient:
             params["to"] = to_date
         if period is not None:
             params["period"] = period
-        response = await client.get(f"/api/eod/{symbol}", params=params)
+        response = await client.get(f"/api/eod/{quote(symbol, safe='')}", params=params)
         return _parse_response(response, empty_default=[])
 
     async def get_mixed_real_time_quotes_data(self, symbols: list[str]) -> any:
@@ -184,7 +185,9 @@ class EodhdClient:
 
     async def get_crypto_fundamentals_data(self, symbol: str) -> any:
         client = await get_client()
-        response = await client.get(f"/api/fundamentals/{symbol}.CC")
+        response = await client.get(f"/api/fundamentals/{quote(symbol, safe='')}.CC")
+        if response.status_code == 404:
+            return {}
         return _parse_response(response, empty_default={})
 
     async def get_screener_data(self, sort: str | None = None, limit: int | None = None, filters: list[list[str]] | None = None) -> any:
