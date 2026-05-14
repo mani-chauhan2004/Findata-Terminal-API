@@ -24,3 +24,5 @@ redis>=7.2.1
 
 #sqlite async
 aiosqlite>=0.22.1
+
+gspread>=6.2.1
