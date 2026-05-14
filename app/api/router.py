@@ -11,6 +11,7 @@ from app.api.routes.market import historical
 from app.api.routes.market import commodities
 from app.api.routes.market import crypto
 from app.api.routes.market import screener
+from app.api.routes.market import symbols
 from app.api.routes.market import news as market_news
 from app.api.routes.calendar import earnings
 from app.api.routes.calendar import ipo
@@ -36,6 +37,7 @@ router.include_router(commodities.router)
 router.include_router(crypto.router)
 router.include_router(market_news.router)
 router.include_router(screener.router)
+router.include_router(symbols.router)
 router.include_router(earnings.router)
 router.include_router(ipo.router)
 router.include_router(split.router)

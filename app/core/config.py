@@ -79,6 +79,10 @@ class settings(BaseSettings):
     SPLIT_CALENDAR_CACHE_TTL: int = 3600
     ECONOMIC_CALENDAR_CACHE_TTL: int = 1800
 
+    # Google Sheets
+    GOOGLE_SHEETS_CREDENTIALS_JSON: str
+    SYMBOLS_SPREADSHEET_ID: str
+
     # Fundamentals TTLs
     FUNDAMENTAL_DEFAULT_CACHE_TTL: int = 3600
     FUNDAMENTAL_GENERAL_CACHE_TTL: int = 86400
