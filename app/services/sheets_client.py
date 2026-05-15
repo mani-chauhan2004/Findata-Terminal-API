@@ -35,5 +35,19 @@ class SheetsClient:
             if row.get("Ticker")
         ]
 
+    def get_news_portal_symbols(self) -> list[dict]:
+        gc = _get_client()
+        sh = gc.open_by_key(settings.SYMBOLS_SPREADSHEET_ID)
+        ws = sh.get_worksheet(1)
+        records = ws.get_all_records()
+        return [
+            {
+                "news_portal": row.get("News Portal", ""),
+                "logo_url": row.get("Logo URL", ""),
+            }
+            for row in records
+            if(row.get("News Portal"))
+        ]
+
 
 sheets_client = SheetsClient()
