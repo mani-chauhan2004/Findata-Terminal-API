@@ -9,6 +9,7 @@ from app.core.paths import PROJECT_ROOT
 from contextlib import asynccontextmanager
 from app.api.router import router
 from app.api.routes.admin import keys as admin_keys
+from app.api.routes.admin import cache as admin_cache
 from app.core.redis_client import close_redis
 from app.core.http_client import close_client
 from app.core.database import init_db
@@ -57,6 +58,7 @@ app = FastAPI(
 
 app.include_router(router)
 app.include_router(admin_keys.router)
+app.include_router(admin_cache.router)
 
 app.add_middleware(
     CORSMiddleware,
