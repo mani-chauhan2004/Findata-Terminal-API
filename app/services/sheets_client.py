@@ -43,6 +43,7 @@ class SheetsClient:
         return [
             {
                 "news_portal": row.get("News Portal", ""),
+                "website_url": row.get("Website URL", ""),
                 "logo_url": row.get("Logo URL", ""),
             }
             for row in records
