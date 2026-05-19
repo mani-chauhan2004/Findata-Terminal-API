@@ -110,13 +110,17 @@ class EodhdClient:
         )
         return _parse_response(response, empty_default={})
 
-    async def get_insider_transactions_data(self, symbol: str | None = None, limit: int | None = None) -> any:
+    async def get_insider_transactions_data(self, symbol: str | None = None, limit: int | None = None, from_date: str | None = None, to_date: str | None = None) -> any:
         client = await get_client()
         params = {}
         if symbol is not None:
             params["code"] = f"{symbol}.US"
         if limit is not None:
             params["limit"] = limit
+        if from_date is not None:
+            params["from"] = from_date
+        if to_date is not None:
+            params["to"] = to_date
         response = await client.get(
             f"/api/insider-transactions",
             params=params
