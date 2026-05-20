@@ -10,6 +10,7 @@ router = APIRouter(
 _STOCK_SYMBOLS_CACHE_KEY = "market:symbols"
 _NEWS_SYMBOLS_CACHE_KEY = "market:news:symbols"
 _COUNTRY_FLAGS_CACHE_KEY = "market:country:flags"
+_ALL_SYMBOLS_CACHE_KEY = "market:all:symbols"
 _CACHE_TTL = 86400  # 24h — sheet rarely changes
 
 
@@ -30,6 +31,26 @@ async def get_symbols():
 
     await cache.set_cache(_STOCK_SYMBOLS_CACHE_KEY, data, _CACHE_TTL)
     return data
+
+@router.get("/all-symbols")
+async def get_all_symbols():
+    """
+    Returns all symbols with ticker, logo URL, and company name
+    sourced from the symbols spreadsheet (sheet index 3).
+    Cached for 24 hours.
+    """
+    cached = await cache.get_cache(_ALL_SYMBOLS_CACHE_KEY)
+    if cached is not None:
+        return cached
+
+    try:
+        data = sheets_client.get_all_symbols()
+    except Exception as e:
+        raise HTTPException(status_code=502, detail=str(e))
+
+    await cache.set_cache(_ALL_SYMBOLS_CACHE_KEY, data, _CACHE_TTL)
+    return data
+
 
 @router.get("/country-flags")
 async def get_country_flags():

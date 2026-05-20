@@ -64,5 +64,20 @@ class SheetsClient:
             if row.get("Country")
         ]
 
+    def get_all_symbols(self) -> list[dict]:
+        gc = _get_client()
+        sh = gc.open_by_key(settings.SYMBOLS_SPREADSHEET_ID)
+        ws = sh.get_worksheet(3)
+        records = ws.get_all_records()
+        return [
+            {
+                "ticker": row.get("Ticker", ""),
+                "logo_url": row.get("Logo URL", ""),
+                "name": row.get("Company Name", ""),
+            }
+            for row in records
+            if row.get("Ticker")
+        ]
+
 
 sheets_client = SheetsClient()
