@@ -50,5 +50,19 @@ class SheetsClient:
             if(row.get("News Portal"))
         ]
 
+    def get_country_flags(self) -> list[dict]:
+        gc = _get_client()
+        sh = gc.open_by_key(settings.SYMBOLS_SPREADSHEET_ID)
+        ws = sh.get_worksheet(2)
+        records = ws.get_all_records()
+        return [
+            {
+                "country": row.get("Country", ""),
+                "flag_url": row.get("Logo URL", ""),
+            }
+            for row in records
+            if row.get("Country")
+        ]
+
 
 sheets_client = SheetsClient()
