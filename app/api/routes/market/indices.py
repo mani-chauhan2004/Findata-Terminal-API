@@ -71,11 +71,18 @@ async def get_index_based_real_time_quotes_data(
         data = await eodhd.get_index_based_real_time_quotes_data(symbols=syms)
 
         if isinstance(data, list):
+            filtered = []
             for item in data:
+                if item.get("close") == "NA":
+                    continue
                 sym = item.get("code", "").upper()
                 if sym in VALID_INDICES:
                     item.update(_attach_classification(sym))
+                filtered.append(item)
+            data = filtered
         elif isinstance(data, dict):
+            if data.get("close") == "NA":
+                return []
             sym = data.get("code", "").upper()
             if sym in VALID_INDICES:
                 data.update(_attach_classification(sym))
