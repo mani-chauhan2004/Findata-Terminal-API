@@ -9,6 +9,7 @@ from app.api.routes.market import bonds
 from app.api.routes.market import quotes
 from app.api.routes.market import historical
 from app.api.routes.market import commodities
+from app.api.routes.market import forex
 from app.api.routes.market import crypto
 from app.api.routes.market import screener
 from app.api.routes.market import symbols
@@ -34,6 +35,7 @@ router.include_router(historical.router)
 router.include_router(indices.router)
 router.include_router(bonds.router)
 router.include_router(commodities.router)
+router.include_router(forex.router)
 router.include_router(crypto.router)
 router.include_router(market_news.router)
 router.include_router(screener.router)
