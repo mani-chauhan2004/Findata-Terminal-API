@@ -180,6 +180,13 @@ class EodhdClient:
         response = await client.get(f"/api/real-time/{primary}.COMM", params=params)
         return _parse_response(response, empty_default=[] if extra else {})
 
+    async def get_forex_real_time_quotes_data(self, symbols: list[str]) -> any:
+        client = await get_client()
+        primary, *extra = symbols
+        params = {"s": ",".join(f"{s}.FOREX" for s in extra)} if extra else {}
+        response = await client.get(f"/api/real-time/{primary}.FOREX", params=params)
+        return _parse_response(response, empty_default=[] if extra else {})
+
     async def get_crypto_real_time_quotes_data(self, symbols: list[str]) -> any:
         client = await get_client()
         primary, *extra = symbols
