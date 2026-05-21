@@ -173,11 +173,11 @@ class EodhdClient:
         )
         return _parse_response(response, empty_default=[])
 
-    async def get_commodity_based_real_time_quotes_data(self, symbols: list[str]) -> any:
+    async def get_commodity_based_real_time_quotes_data(self, tickers: list[str]) -> any:
         client = await get_client()
-        primary, *extra = symbols
-        params = {"s": ",".join(f"{s}.COMM" for s in extra)} if extra else {}
-        response = await client.get(f"/api/real-time/{primary}.COMM", params=params)
+        primary, *extra = tickers
+        params = {"s": ",".join(extra)} if extra else {}
+        response = await client.get(f"/api/real-time/{primary}", params=params)
         return _parse_response(response, empty_default=[] if extra else {})
 
     async def get_forex_real_time_quotes_data(self, symbols: list[str]) -> any:
