@@ -19,6 +19,7 @@ from app.api.routes.calendar import ipo
 from app.api.routes.calendar import splits as split
 from app.api.routes.calendar import dividends as dividend
 from app.api.routes.calendar import economic
+from app.api.routes.user import watchlist
 from fastapi import APIRouter, Depends
 from app.core.dependencies import verify_api_key
 
@@ -45,3 +46,4 @@ router.include_router(ipo.router)
 router.include_router(split.router)
 router.include_router(dividend.router)
 router.include_router(economic.router)
+router.include_router(watchlist.router)
