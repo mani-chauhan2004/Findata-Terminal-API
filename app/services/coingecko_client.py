@@ -31,3 +31,24 @@ class CoinGeckoClient:
         }
         response = await client.get("/api/v3/coins/markets", params=params)
         return _parse_response(response, empty_default=[])
+
+    async def get_token_price_data(
+        self,
+        platform: str,
+        contract_addresses: str,
+        vs_currencies: str = "usd",
+        include_24hr_vol: bool = False,
+        include_24hr_change: bool = False,
+    ) -> dict:
+        client = await get_coingecko_client()
+        params: dict = {
+            "contract_addresses": contract_addresses,
+            "vs_currencies": vs_currencies,
+            "include_market_cap": "true",
+        }
+        if include_24hr_vol:
+            params["include_24hr_vol"] = "true"
+        if include_24hr_change:
+            params["include_24hr_change"] = "true"
+        response = await client.get(f"/api/v3/simple/token_price/{platform}", params=params)
+        return _parse_response(response, empty_default={})
