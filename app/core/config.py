@@ -42,10 +42,16 @@ class settings(BaseSettings):
 
     ADMIN_KEY: str
 
+    COINGECKO_API_KEY: str
+    COINGECKO_API_BASE_URL: str
+
     EODHD_API_KEY: str
     EODHD_API_BASE_URL: str
 
     REDIS_URL: str
+
+    # CoinGecko TTLs
+    COINGECKO_MARKET_CAP_CACHE_TTL: int = 3600
 
     # Quote TTLs
     MIXED_REAL_TIME_QUOTES_CACHE_TTL: int = 15

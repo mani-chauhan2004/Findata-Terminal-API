@@ -11,6 +11,7 @@ from app.api.routes.market import historical
 from app.api.routes.market import commodities
 from app.api.routes.market import forex
 from app.api.routes.market import crypto
+from app.api.routes.market import coingecko
 from app.api.routes.market import screener
 from app.api.routes.market import symbols
 from app.api.routes.market import news as market_news
@@ -38,6 +39,7 @@ router.include_router(bonds.router)
 router.include_router(commodities.router)
 router.include_router(forex.router)
 router.include_router(crypto.router)
+router.include_router(coingecko.router)
 router.include_router(market_news.router)
 router.include_router(screener.router)
 router.include_router(symbols.router)
