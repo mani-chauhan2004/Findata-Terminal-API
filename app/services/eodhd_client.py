@@ -1,17 +1,25 @@
 import json
 from urllib.parse import quote
+import httpx
 from app.core.http_client import get_client
+from app.core.exceptions import UpstreamAPIError, UpstreamParseError
 
 
 def _parse_response(response, empty_default=None):
-    response.raise_for_status()
+    try:
+        response.raise_for_status()
+    except httpx.HTTPStatusError as e:
+        raise UpstreamAPIError(
+            status_code=e.response.status_code,
+            endpoint=str(e.request.url.path),
+        ) from None
     text = response.text.strip()
     if not text:
         return empty_default if empty_default is not None else {}
     try:
         return json.loads(text)
-    except json.JSONDecodeError as e:
-        raise ValueError(f"Invalid response from API: {e}") from e
+    except json.JSONDecodeError:
+        raise UpstreamParseError() from None
 
 
 class EodhdClient:

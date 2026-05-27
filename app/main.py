@@ -3,7 +3,8 @@ import logging.config
 import json
 import atexit
 import uvicorn
-from fastapi import FastAPI
+from fastapi import FastAPI, Request
+from fastapi.responses import JSONResponse
 from app.core.config import settings
 from app.core.paths import PROJECT_ROOT
 from contextlib import asynccontextmanager
@@ -12,7 +13,9 @@ from app.api.routes.admin import keys as admin_keys
 from app.api.routes.admin import cache as admin_cache
 from app.core.redis_client import close_redis
 from app.core.http_client import close_client
+from app.core.coingecko_http_client import close_coingecko_client
 from app.core.database import init_db
+from app.core.exceptions import UpstreamAPIError, UpstreamParseError
 from fastapi.middleware.cors import CORSMiddleware
 
 if str(PROJECT_ROOT) not in sys.path:
@@ -45,6 +48,7 @@ async def lifespan(app: FastAPI):
     logger.info("Stopping the application")
     await close_redis()
     await close_client()
+    await close_coingecko_client()
 
 
 app = FastAPI(
@@ -67,6 +71,22 @@ app.add_middleware(
     allow_methods=["*"],
     allow_headers=["*"],
 )
+
+
+@app.exception_handler(UpstreamAPIError)
+async def upstream_api_error_handler(request: Request, exc: UpstreamAPIError):
+    return JSONResponse(
+        status_code=exc.status_code,
+        content={"error": exc.detail},
+    )
+
+
+@app.exception_handler(UpstreamParseError)
+async def upstream_parse_error_handler(request: Request, exc: UpstreamParseError):
+    return JSONResponse(
+        status_code=502,
+        content={"error": exc.detail},
+    )
 
 @app.get("/health")
 async def health():
