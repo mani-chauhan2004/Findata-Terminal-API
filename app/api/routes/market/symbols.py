@@ -74,8 +74,7 @@ async def get_country_flags():
 @router.get("/news/symbols")
 async def get_news_portal_symbols():
     """
-    Returns the curated list of supported symbols with metadata
-    (ticker, name, logo URL, Twitter, LinkedIn). Cached for 24 hours.
+    Returns news portal symbols with logo URLs. Cached for 24 hours.
     """
     cached = await cache.get_cache(_NEWS_SYMBOLS_CACHE_KEY)
     if cached is not None:
