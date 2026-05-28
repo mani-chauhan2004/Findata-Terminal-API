@@ -32,6 +32,14 @@ class CoinGeckoClient:
         response = await client.get("/api/v3/coins/markets", params=params)
         return _parse_response(response, empty_default=[])
 
+    async def get_token_info(self, platform: str, contract_address: str) -> dict:
+        client = await get_coingecko_client()
+        response = await client.get(
+            f"/api/v3/coins/{platform}/contract/{contract_address}",
+            params={"localization": "false", "tickers": "false", "community_data": "false", "developer_data": "false"},
+        )
+        return _parse_response(response, empty_default={})
+
     async def get_token_price_data(
         self,
         platform: str,
