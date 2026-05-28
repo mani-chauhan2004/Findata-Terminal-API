@@ -5,6 +5,7 @@ import atexit
 import uvicorn
 from fastapi import FastAPI, Request
 from fastapi.responses import JSONResponse
+from fastapi.staticfiles import StaticFiles
 from app.core.config import settings
 from app.core.paths import PROJECT_ROOT
 from contextlib import asynccontextmanager
@@ -63,6 +64,10 @@ app = FastAPI(
 app.include_router(router)
 app.include_router(admin_keys.router)
 app.include_router(admin_cache.router)
+
+_icons_dir = PROJECT_ROOT / "static" / "icons"
+_icons_dir.mkdir(parents=True, exist_ok=True)
+app.mount("/static/icons", StaticFiles(directory=str(_icons_dir)), name="icons")
 
 app.add_middleware(
     CORSMiddleware,
