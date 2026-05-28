@@ -3,7 +3,7 @@ import json
 import gspread
 from google.oauth2.service_account import Credentials
 from app.core.config import settings
-from app.core.paths import STOCKS_ICONS_DIR, ALL_SYMBOLS_ICONS_DIR, COUNTRIES_ICONS_DIR, NEWS_ICONS_DIR
+from app.core.paths import STOCKS_ICONS_DIR, ALL_SYMBOLS_ICONS_DIR, COUNTRIES_ICONS_DIR, NEWS_ICONS_DIR, TOKENS_ICONS_DIR
 
 _SCOPES = ["https://www.googleapis.com/auth/spreadsheets.readonly"]
 
@@ -89,6 +89,28 @@ class SheetsClient:
             for row in records
             if row.get("Ticker")
         ]
+
+
+    def get_tokens(self) -> list[dict]:
+        gc = _get_client()
+        sh = gc.open_by_key(settings.SYMBOLS_SPREADSHEET_ID)
+        ws = sh.get_worksheet(4)
+        records = ws.get_all_records()
+        base = settings.BASE_API_URL.rstrip("/")
+        result = []
+        for row in records:
+            address = row.get("address", "").strip()
+            if not address:
+                continue
+            matches = list(TOKENS_ICONS_DIR.glob(f"{address}.*"))
+            logo_url = f"{base}/static/icons/tokens/{matches[0].name}" if matches else ""
+            result.append({
+                "name": row.get("name", ""),
+                "symbol": row.get("symbol", ""),
+                "address": address,
+                "logo_url": logo_url,
+            })
+        return result
 
 
 sheets_client = SheetsClient()
