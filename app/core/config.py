@@ -54,6 +54,7 @@ class settings(BaseSettings):
     # CoinGecko TTLs
     COINGECKO_MARKET_CAP_CACHE_TTL: int = 3600
     COINGECKO_TOKEN_PRICE_CACHE_TTL: int = 3600
+    COINGECKO_TOKEN_INFO_CACHE_TTL: int = 3600
 
     # Quote TTLs
     MIXED_REAL_TIME_QUOTES_CACHE_TTL: int = 15
