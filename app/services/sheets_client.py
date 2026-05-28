@@ -24,7 +24,8 @@ def _static_icon_url(icons_dir, name: str, source_url: str) -> str:
     last_segment = source_url.split("?")[0].rstrip("/").rsplit("/", 1)[-1]
     raw_ext = last_segment.rsplit(".", 1)[-1] if "." in last_segment else ""
     suffix = raw_ext if raw_ext.isalpha() and len(raw_ext) <= 4 else "png"
-    return f"/static/icons/{icons_dir.name}/{safe_name}.{suffix}"
+    base = settings.BASE_API_URL.rstrip("/")
+    return f"{base}/static/icons/{icons_dir.name}/{safe_name}.{suffix}"
 
 
 class SheetsClient:

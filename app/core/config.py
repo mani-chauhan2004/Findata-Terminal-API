@@ -39,6 +39,7 @@ class settings(BaseSettings):
 
 
     PROJECT_NAME: str
+    BASE_API_URL: str
 
     ADMIN_KEY: str
 
