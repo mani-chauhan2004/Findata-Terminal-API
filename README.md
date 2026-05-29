@@ -1,4 +1,4 @@
-# ASXN Terminal API Documentation
+# Terminal API Documentation
 
 > **Version**: v1
 > **Base URL**: `http://localhost:8000/api/v1`
@@ -27,7 +27,7 @@
 
 ## Overview
 
-The ASXN Terminal API is a financial data proxy service that provides real-time and historical market data for stocks, indices, commodities, crypto, and financial calendars. It is built on top of the [EODHD](https://eodhd.com) data provider and adds Redis-backed caching to reduce latency and upstream load.
+The Terminal API is a financial data proxy service that provides real-time and historical market data for stocks, indices, commodities, crypto, and financial calendars. It is built on top of the [EODHD](https://eodhd.com) data provider and adds Redis-backed caching to reduce latency and upstream load.
 
 **Who is this for?**
 - **Developers** integrating financial data into front-end dashboards or trading tools
@@ -65,7 +65,7 @@ The ASXN Terminal API is a financial data proxy service that provides real-time 
 
 ```bash
 git clone <repository-url>
-cd asxn_terminal
+cd <repo-directory>
 ```
 
 ### 2. Create and activate a virtual environment
@@ -98,15 +98,25 @@ pip install -r requirements.txt
 ### 4. Configure environment variables
 
 The app loads configuration exclusively from `.env` (hardcoded in `app/core/config.py`).
-Edit it directly and replace the placeholder values:
+Copy the template and fill in your values:
+
+```bash
+cp .env.example .env
+```
 
 **Required variables:**
 
 ```dotenv
 TERMINAL_PROJECT_NAME=Terminal
+TERMINAL_BASE_API_URL=https://your-api-domain.com
+TERMINAL_ADMIN_KEY=your_admin_key_here
 TERMINAL_EODHD_API_KEY=your_eodhd_api_key_here
 TERMINAL_EODHD_API_BASE_URL=https://eodhd.com
+TERMINAL_COINGECKO_API_KEY=your_coingecko_api_key_here
+TERMINAL_COINGECKO_API_BASE_URL=https://api.coingecko.com
 TERMINAL_REDIS_URL=redis://localhost:6379
+TERMINAL_GOOGLE_SHEETS_CREDENTIALS_JSON='{"type":"service_account",...}'
+TERMINAL_SYMBOLS_SPREADSHEET_ID=your_spreadsheet_id_here
 ```
 
 **Optional overrides** (defaults shown):
@@ -119,7 +129,7 @@ TERMINAL_API_V1_STR=api/v1
 TERMINAL_BACKEND_CORS_ORIGINS=[http://localhost:3000,http://localhost:8000]
 ```
 
-> **Note:** All environment variables must be prefixed with `TERMINAL_`. The application will fail to start if `TERMINAL_PROJECT_NAME`, `TERMINAL_EODHD_API_KEY`, `TERMINAL_EODHD_API_BASE_URL`, or `TERMINAL_REDIS_URL` are missing.
+> **Note:** All environment variables must be prefixed with `TERMINAL_`. The application will fail to start if any required variable is missing.
 
 > **EODHD demo key:** The `demo` API key is accepted by EODHD for a small subset of endpoints and symbols (e.g. `AAPL.US`). Use a paid key for full access.
 
@@ -173,9 +183,15 @@ You should receive a JSON quote response. The interactive Swagger UI is availabl
 | Variable | Required | Default | Description |
 |---|---|---|---|
 | `TERMINAL_PROJECT_NAME` | Yes | — | Application name shown in Swagger UI |
+| `TERMINAL_BASE_API_URL` | Yes | — | Public base URL of this API |
+| `TERMINAL_ADMIN_KEY` | Yes | — | Admin authentication key |
 | `TERMINAL_EODHD_API_KEY` | Yes | — | EODHD API key |
 | `TERMINAL_EODHD_API_BASE_URL` | Yes | — | EODHD base URL |
+| `TERMINAL_COINGECKO_API_KEY` | Yes | — | CoinGecko API key |
+| `TERMINAL_COINGECKO_API_BASE_URL` | Yes | — | CoinGecko base URL |
 | `TERMINAL_REDIS_URL` | Yes | — | Redis connection string |
+| `TERMINAL_GOOGLE_SHEETS_CREDENTIALS_JSON` | Yes | — | Google service account credentials JSON |
+| `TERMINAL_SYMBOLS_SPREADSHEET_ID` | Yes | — | Google Sheets spreadsheet ID for symbols |
 | `TERMINAL_HOST` | No | `0.0.0.0` | Server bind host |
 | `TERMINAL_PORT` | No | `8000` | Server bind port |
 | `TERMINAL_ENVIRONMENT` | No | `local` | Controls Swagger UI visibility |
@@ -214,7 +230,7 @@ curl "http://localhost:8000/api/v1/stock/AAPL/historical?from=2025-02-01&to=2025
 
 ## Authentication
 
-The ASXN Terminal API does **not** require client-side authentication tokens on its own endpoints.
+The Terminal API does **not** require client-side authentication tokens on its own endpoints.
 
 Authentication with the upstream EODHD data provider is handled server-side using the `EODHD_API_KEY` environment variable configured at deployment time. Clients consume the proxy directly without needing an EODHD key.
 
